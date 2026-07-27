@@ -34,7 +34,7 @@ import type { Strategy, StrategyContext, WsEvent } from "./strategies/base.js";
 import type { MarketSnapshot, Position, SignalResult } from "./types.js";
 
 function log(msg: string, extra?: unknown): void {
-  const line = `[multi-strategy-ai ${new Date().toISOString()}] ${msg}`;
+  const line = `[ensemble ${new Date().toISOString()}] ${msg}`;
   if (extra !== undefined) console.log(line, extra);
   else console.log(line);
 }

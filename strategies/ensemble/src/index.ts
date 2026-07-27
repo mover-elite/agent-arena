@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://github.com/somnia-chain/dreamdex-bot-kit/blob/main/LICENSE
  */
 
-// Modular multi-strategy AI bot.
+// Modular ensemble bot.
 // Classical analyzers (momentum, mean-reversion, grid) advise each cycle; an
 // optional OpenAI-compatible LLM fuses them into BUY/SELL/HOLD. When FEATURES_AI
 // is false, a majority vote fuses signals instead. Execution goes through
@@ -20,7 +20,7 @@ async function main(): Promise<void> {
   await orch.start();
 
   const shutdown = async () => {
-    console.log(`[multi-strategy-ai ${new Date().toISOString()}] shutting down…`);
+    console.log(`[ensemble ${new Date().toISOString()}] shutting down…`);
     await orch.stop();
     process.exit(0);
   };
@@ -33,6 +33,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((e) => {
-  console.error(`[multi-strategy-ai] fatal: ${(e as Error).message}`);
+  console.error(`[ensemble] fatal: ${(e as Error).message}`);
   process.exit(1);
 });

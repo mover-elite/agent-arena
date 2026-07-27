@@ -1,4 +1,4 @@
-# multi-strategy-ai — modular ensemble + optional LLM
+# ensemble — modular ensemble + optional LLM
 
 Combines the **modular Strategy / Orchestrator** pattern from
 [`examples/02-modular-typescript`](../../examples/02-modular-typescript) with the
@@ -17,10 +17,10 @@ Each cycle:
 ## Run
 
 ```bash
-cp strategies/multi-strategy-ai/.env.example strategies/multi-strategy-ai/.env
+cp strategies/ensemble/.env.example strategies/ensemble/.env
 # set PRIVATE_KEY (or use repo-root .env); keep DRY_RUN=true
 npm install
-npm run dev -w multi-strategy-ai
+npm run dev -w ensemble
 ```
 
 Defaults to **`DRY_RUN=true`** and **`FEATURES_AI=false`** (vote-only, no API key needed).
@@ -61,6 +61,6 @@ On timeout / parse / HTTP errors the bot **falls back to majority vote** (fail-o
 | `MSA_MAX_LOSS_PERCENT` | `0.5` | Halt when cumulative PnL ≤ −this × starting equity |
 | `DRY_RUN` | `true` | Log only; `false` to send transactions |
 
-Trade attributions land under `strategies/multi-strategy-ai/data/`.
+Trade attributions land under `strategies/ensemble/data/`.
 
 > Educational template, not financial advice — see [`../../DISCLAIMER.md`](../../DISCLAIMER.md).
