@@ -97,6 +97,8 @@ New to all this? Read [docs/getting-started.md](docs/getting-started.md) end to 
 
 **Deploy on Railway (24/7 worker, no local Node):** see [docs/railway.md](docs/railway.md).
 
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/_qTYwR?referralCode=2yBRe7&utm_medium=integration&utm_source=template&utm_campaign=generic)
+
 ### Helper scripts
 
 Small read-only / cleanup utilities in [`scripts/`](scripts) (run with `npx tsx scripts/<name>.ts`):

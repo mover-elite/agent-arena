@@ -44,16 +44,19 @@ For DreamDEX maintainers publishing the template:
    - **`PRIVATE_KEY`** — mark **required**, leave default **empty** (user fills at deploy).
    - Or: deploy from GitHub first → **Variables → suggested import** from `.env.railway` → add empty required `PRIVATE_KEY` → **Generate Template from Project**.
 5. **Do not** enable public networking for this service.
-6. Create template, copy the share URL (e.g. `https://railway.com/template/<slug>`).
+6. Create template, copy the share URL (e.g. `https://railway.com/deploy/...`).
 7. Paste that URL into `docs/railway.md` under **Template URL** once live.
 8. Optional: [publish to the marketplace](https://docs.railway.com/templates/publish-and-share).
 
 The Docker image also copies `.env.railway` → `.env`, so a service with **only** `PRIVATE_KEY` set in Railway still gets every other default at runtime.
 
-### Template URL
+### Template URL (demo / test)
 
-<!-- Replace after the template is created in Railway -->
-_TBD — add the Railway template deploy link here._
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/_qTYwR?referralCode=2yBRe7&utm_medium=integration&utm_source=template&utm_campaign=generic)
+
+Deploy link: https://railway.com/deploy/_qTYwR?referralCode=2yBRe7&utm_medium=integration&utm_source=template&utm_campaign=generic
+
+Set **`PRIVATE_KEY`** at deploy time; other defaults come from the template / [`.env.railway`](../.env.railway).
 
 ---
 
