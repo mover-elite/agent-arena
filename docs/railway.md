@@ -121,7 +121,14 @@ docker run --rm -e PRIVATE_KEY=0x... -e STRATEGY=starter -e DRY_RUN=true dreamde
 
 ## dreamBot Builder handoff (separate repo)
 
-The builder should add a **Deploy on Railway** button on step 5 that opens the template URL. Pass **non-secret** variables as Railway service defaults (or documented copy-paste list): `STRATEGY`, `NETWORK`, `DRY_RUN`, symbol, and strategy-prefixed knobs. **Never** put `PRIVATE_KEY` in URL query parameters from the DreamDEX site.
+**Recommended Deploy UX (step 5):**
+
+1. User picks strategy / network / knobs in the builder UI (as today).
+2. Builder acts as an **`.env` builder**: generate a Railway-ready env block from those settings (`STRATEGY`, `NETWORK`, `DRY_RUN`, symbol + strategy-prefixed knobs). **Omit `PRIVATE_KEY`.**
+3. Show **Copy env for Railway** (and optionally open the template URL).
+4. User pastes that block into Railway **Variables → RAW Editor**, then sets **only `PRIVATE_KEY`** and deploys.
+
+Template defaults (`.env.railway`) cover the “I skipped the builder” path. Builder-generated env overrides those when pasted. **Never** put `PRIVATE_KEY` in DreamDEX URLs or store it server-side.
 
 ---
 

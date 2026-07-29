@@ -1,4 +1,12 @@
 /**
+ * @license
+ * Copyright DreamDEX S.A.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://github.com/somnia-chain/dreamdex-bot-kit/blob/main/LICENSE
+ */
+
+/**
  * Railway worker entrypoint: pick STRATEGY, validate PRIVATE_KEY, run npm start for that workspace.
  */
 
@@ -60,6 +68,12 @@ function main() {
     env: process.env,
     shell: false,
   });
+
+  const forward = (signal) => {
+    if (child.pid) child.kill(signal);
+  };
+  process.on("SIGTERM", () => forward("SIGTERM"));
+  process.on("SIGINT", () => forward("SIGINT"));
 
   child.on("error", (err) => {
     console.error(`[railway-start] Failed to spawn npm: ${err.message}`);
