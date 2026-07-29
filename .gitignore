@@ -20,6 +20,9 @@ venv/
 # os
 .DS_Store
 
+# local Cursor rules
+.cursor/
+
 # python build artifacts
 *.egg-info/
 .pytest_cache/
