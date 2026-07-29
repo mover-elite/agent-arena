@@ -12,6 +12,7 @@ COPY packages packages
 COPY strategies strategies
 COPY advanced advanced
 COPY scripts scripts
+COPY .env.railway .env
 
 RUN npm ci
 

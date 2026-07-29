@@ -40,16 +40,15 @@ For DreamDEX maintainers publishing the template:
 1. In Railway: **Workspace → Templates → New Template**.
 2. Add a service sourced from `https://github.com/somnia-chain/dreamdex-bot-kit` (pin branch/tag as needed).
 3. Railway picks up [`railway.toml`](../railway.toml) and the Dockerfile on deploy.
-4. In the template **Variables** tab:
-   - **`PRIVATE_KEY`** — mark **required**, leave default empty (user fills at deploy).
-   - **`STRATEGY`** — default `starter`.
-   - **`NETWORK`** — default `testnet`.
-   - **`DRY_RUN`** — default `true`.
-   - Optional strategy knobs — same names as each strategy’s `.env.example` (see below).
+4. In the template **Variables** tab, paste the contents of [`.env.railway`](../.env.railway) via **RAW Editor** (all defaults except `PRIVATE_KEY`), then:
+   - **`PRIVATE_KEY`** — mark **required**, leave default **empty** (user fills at deploy).
+   - Or: deploy from GitHub first → **Variables → suggested import** from `.env.railway` → add empty required `PRIVATE_KEY` → **Generate Template from Project**.
 5. **Do not** enable public networking for this service.
 6. Create template, copy the share URL (e.g. `https://railway.com/template/<slug>`).
 7. Paste that URL into `docs/railway.md` under **Template URL** once live.
 8. Optional: [publish to the marketplace](https://docs.railway.com/templates/publish-and-share).
+
+The Docker image also copies `.env.railway` → `.env`, so a service with **only** `PRIVATE_KEY` set in Railway still gets every other default at runtime.
 
 ### Template URL
 
@@ -73,13 +72,15 @@ Fund the bot wallet (SOMI for gas + tokens for the market). See [Getting started
 
 ## Environment variables
 
+Canonical defaults for Railway live in [`.env.railway`](../.env.railway) (committed, no `PRIVATE_KEY`). Import that file in the Railway UI or rely on the baked-in `.env` in the Docker image.
+
 | Variable | Required | Default | Notes |
 |----------|----------|---------|--------|
-| `PRIVATE_KEY` | Yes | — | Dedicated bot wallet recommended |
-| `STRATEGY` | No | `starter` | `starter`, `market-making`, `grid`, `momentum`, `mean-reversion`, `twap` |
-| `NETWORK` | No | `testnet` | `testnet` or `mainnet` |
-| `DRY_RUN` | No | `true` | `true` / `false` |
-| Strategy knobs | No | code defaults | Same keys as `strategies/<name>/.env.example` |
+| `PRIVATE_KEY` | Yes | — | Set only in Railway; never in `.env.railway` |
+| `STRATEGY` | No | `starter` | See `.env.railway` |
+| `NETWORK` | No | `testnet` | |
+| `DRY_RUN` | No | `true` | |
+| Strategy knobs | No | see `.env.railway` | All six builder strategies included |
 
 ### Market symbol env names
 
