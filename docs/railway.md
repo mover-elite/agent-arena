@@ -40,9 +40,7 @@ For DreamDEX maintainers publishing the template:
 1. In Railway: **Workspace → Templates → New Template**.
 2. Add a service sourced from `https://github.com/somnia-chain/dreamdex-bot-kit` (pin branch/tag as needed).
 3. Railway picks up [`railway.toml`](../railway.toml) and the Dockerfile on deploy.
-4. In the template **Variables** tab, paste the contents of [`.env.railway`](../.env.railway) via **RAW Editor** (all defaults except `PRIVATE_KEY`), then:
-   - **`PRIVATE_KEY`** — mark **required**, leave default **empty** (user fills at deploy).
-   - Or: deploy from GitHub first → **Variables → suggested import** from `.env.railway` → add empty required `PRIVATE_KEY` → **Generate Template from Project**.
+4. Leave the template variables **empty** — the baked [`.env.railway`](../.env.railway) supplies every non-secret default. Users set their config (including **`PRIVATE_KEY`**) in the service's **Variables → RAW Editor** after deploying. Do **not** declare `PRIVATE_KEY` as a template variable.
 5. **Do not** enable public networking for this service.
 6. Create template, copy the share URL (e.g. `https://railway.com/deploy/...`).
 7. Paste that URL into `docs/railway.md` under **Template URL** once live.
@@ -50,24 +48,23 @@ For DreamDEX maintainers publishing the template:
 
 The Docker image also copies `.env.railway` → `.env`, so a service with **only** `PRIVATE_KEY` set in Railway still gets every other default at runtime.
 
-### Template URL (demo / test)
+### Template URL
 
 [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/pE6EIF)
 
 Deploy link: https://railway.com/deploy/pE6EIF
 
-Set **`PRIVATE_KEY`** at deploy time; other defaults come from the template / [`.env.railway`](../.env.railway).
+After deploying, set your config in the service's **Variables → RAW Editor** (paste your env block, including **`PRIVATE_KEY`**). Anything you don't set falls back to the baked [`.env.railway`](../.env.railway) defaults.
 
 ---
 
 ## User flow
 
-1. Open the template → **Deploy**.
-2. Set **`PRIVATE_KEY`** (`0x…`; MetaMask exports without `0x` — the start script adds it and logs once).
-3. Set **`STRATEGY`** and tuning vars (or keep defaults).
-4. Deploy → open **Logs** and confirm dry-run lines look right.
-5. Connect the **same wallet** on [Algo Arena](https://app.dreamdex.io/dreambot-builder) so volume counts.
-6. When ready for real trading: set `NETWORK=mainnet`, `DRY_RUN=false` in Railway variables and redeploy.
+1. Open the template → **Deploy** (starts with the baked testnet + dry-run defaults).
+2. In the service, open **Variables → RAW Editor** and paste your env block (from the dreamBot Builder, or hand-written) — this sets `STRATEGY`, the market, tuning vars, and **`PRIVATE_KEY`** (`0x…`; MetaMask exports without `0x` — the start script adds it and logs once).
+3. Redeploy → open **Logs** and confirm dry-run lines look right. Until `PRIVATE_KEY` is set, the service exits with `Set PRIVATE_KEY…` and restarts — that's expected.
+4. Connect the **same wallet** on [Algo Arena](https://app.dreamdex.io/dreambot-builder) so volume counts.
+5. When ready for real trading: set `NETWORK=mainnet`, `DRY_RUN=false` in Railway variables and redeploy.
 
 Fund the bot wallet (SOMI for gas + tokens for the market). See [Getting started § Fund the bot](getting-started.md#4-fund-the-bot).
 
@@ -124,12 +121,12 @@ docker run --rm -e PRIVATE_KEY=0x... -e STRATEGY=starter -e DRY_RUN=true dreamde
 
 ## dreamBot Builder handoff (separate repo)
 
-**Recommended Deploy UX (step 5):**
+**Deploy UX (implemented):**
 
-1. User picks strategy / network / knobs in the builder UI (as today).
-2. Builder acts as an **`.env` builder**: generate a Railway-ready env block from those settings (`STRATEGY`, `NETWORK`, `DRY_RUN`, symbol + strategy-prefixed knobs). **Omit `PRIVATE_KEY`.**
-3. Show **Copy env for Railway** (and optionally open the template URL).
-4. User pastes that block into Railway **Variables → RAW Editor**, then sets **only `PRIVATE_KEY`** and deploys.
+1. User picks strategy / network / knobs in the builder UI.
+2. The builder generates a Railway-ready env block from those settings (`STRATEGY`, `NETWORK`, `DRY_RUN`, symbol + strategy-prefixed knobs) with a blank `PRIVATE_KEY=` line for the user to fill.
+3. **Copy** the block; the **Deploy on Railway** button opens the template.
+4. User pastes the block into Railway **Variables → RAW Editor**, fills in their `PRIVATE_KEY`, and deploys.
 
 Template defaults (`.env.railway`) cover the “I skipped the builder” path. Builder-generated env overrides those when pasted. **Never** put `PRIVATE_KEY` in DreamDEX URLs or store it server-side.
 
