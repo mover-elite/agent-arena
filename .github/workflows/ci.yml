@@ -9,7 +9,7 @@
 # The repo uses npm workspaces with a committed package-lock.json, and the
 # Dockerfile installs via `npm ci`, so npm is the package manager here.
 
-name: CI
+name: Bot kit CI
 
 on:
   pull_request:
