@@ -52,9 +52,9 @@ The Docker image also copies `.env.railway` → `.env`, so a service with **only
 
 ### Template URL (demo / test)
 
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/_qTYwR?referralCode=2yBRe7&utm_medium=integration&utm_source=template&utm_campaign=generic)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/_qTYwR)
 
-Deploy link: https://railway.com/deploy/_qTYwR?referralCode=2yBRe7&utm_medium=integration&utm_source=template&utm_campaign=generic
+Deploy link: https://railway.com/deploy/_qTYwR
 
 Set **`PRIVATE_KEY`** at deploy time; other defaults come from the template / [`.env.railway`](../.env.railway).
 
