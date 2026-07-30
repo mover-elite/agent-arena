@@ -15,6 +15,7 @@
   "scripts": {
     "postinstall": "npm run build",
     "quickstart": "node scripts/quickstart.mjs",
+    "railway:start": "node scripts/railway-start.mjs",
     "build": "npm run build -w @dreamdex-bot-kit/core",
     "typecheck": "npm run build && npm run typecheck --workspaces --if-present"
   }

@@ -18,7 +18,7 @@ competition.
 | --- | --- |
 | [`packages/core`](packages/core) | Shared client — auth, REST, WebSocket, order execution, gotcha guards, nonce manager. TypeScript **and** Python. Every strategy imports it. |
 | [`strategies/`](strategies) | Start with [`starter`](strategies/starter) — the simplest bot, where you edit one `decide()` function. Then full strategies: [market-making](strategies/market-making), [grid](strategies/grid), [momentum](strategies/momentum), [mean-reversion](strategies/mean-reversion), [twap](strategies/twap) (execution algo), and [ensemble](strategies/ensemble) (modular ensemble + optional LLM). Each is clone → configure → run, with its own README explaining the trade-offs. |
-| [`docs/`](docs) | The bot-specific knowledge the protocol docs don't cover: [getting started](docs/getting-started.md), [architecture](docs/architecture.md), [gotchas](docs/gotchas.md), [running 24/7](docs/24-7-operations.md), [session keys](docs/session-keys.md) (run a bot with a hot key that can't withdraw funds). |
+| [`docs/`](docs) | The bot-specific knowledge the protocol docs don't cover: [getting started](docs/getting-started.md), [architecture](docs/architecture.md), [gotchas](docs/gotchas.md), [running 24/7](docs/24-7-operations.md), [session keys](docs/session-keys.md) (run a bot with a hot key that can't withdraw funds), [Railway deploy](docs/railway.md). |
 | [`advanced/batch-7702`](advanced/batch-7702) | A **technique demo** (not a trading strategy): how to use EIP-7702 to batch multiple actions into a single transaction. |
 | [`tools/edge-analytics`](tools/edge-analytics) | An **analysis tool** (not a bot): measures whether a maker actually has an edge — captured spread vs adverse selection vs transactions-per-fill — from your own fills. Methodology in [docs/measuring-edge.md](docs/measuring-edge.md). |
 | [`examples/`](examples) | The real competition bots, sanitized to core code. Different architectures, languages, and tricks — read them to see how people actually did it. |
@@ -94,6 +94,10 @@ python -m bot
 Start on **Shannon testnet** (`NETWORK=testnet`, chain `50312`) with small size before you touch
 mainnet (`5031`). Get testnet funds at [testnet.somnia.network](https://testnet.somnia.network).
 New to all this? Read [docs/getting-started.md](docs/getting-started.md) end to end.
+
+**Deploy on Railway (24/7 worker, no local Node):** see [docs/railway.md](docs/railway.md).
+
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/_qTYwR)
 
 ### Helper scripts
 

@@ -6,6 +6,7 @@ dist/
 .env
 .env.*
 !.env.example
+!.env.railway
 *.key
 keystore.json
 .state/
@@ -19,6 +20,9 @@ venv/
 
 # os
 .DS_Store
+
+# local Cursor rules
+.cursor/
 
 # python build artifacts
 *.egg-info/
