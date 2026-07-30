@@ -97,7 +97,7 @@ New to all this? Read [docs/getting-started.md](docs/getting-started.md) end to 
 
 **Deploy on Railway (24/7 worker, no local Node):** see [docs/railway.md](docs/railway.md).
 
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/_qTYwR)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/pE6EIF)
 
 ### Helper scripts
 
