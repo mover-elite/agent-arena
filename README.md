@@ -17,8 +17,9 @@ competition.
 | Path | What it is |
 | --- | --- |
 | [`packages/core`](packages/core) | Shared client — auth, REST, WebSocket, order execution, gotcha guards, nonce manager. TypeScript **and** Python. Every strategy imports it. |
+| [`packages/backtest`](packages/backtest) | Bar-by-bar backtest engine (`SimPool`, fill model, metrics). Drive it with `npm run backtest` — see [docs/backtesting.md](docs/backtesting.md). |
 | [`strategies/`](strategies) | Start with [`starter`](strategies/starter) — the simplest bot, where you edit one `decide()` function. Then full strategies: [market-making](strategies/market-making), [grid](strategies/grid), [momentum](strategies/momentum), [mean-reversion](strategies/mean-reversion), [twap](strategies/twap) (execution algo), and [ensemble](strategies/ensemble) (modular ensemble + optional LLM). Each is clone → configure → run, with its own README explaining the trade-offs. |
-| [`docs/`](docs) | The bot-specific knowledge the protocol docs don't cover: [getting started](docs/getting-started.md), [architecture](docs/architecture.md), [gotchas](docs/gotchas.md), [running 24/7](docs/24-7-operations.md), [session keys](docs/session-keys.md) (run a bot with a hot key that can't withdraw funds), [Railway deploy](docs/railway.md). |
+| [`docs/`](docs) | The bot-specific knowledge the protocol docs don't cover: [getting started](docs/getting-started.md), [architecture](docs/architecture.md), [gotchas](docs/gotchas.md), [backtesting](docs/backtesting.md), [running 24/7](docs/24-7-operations.md), [session keys](docs/session-keys.md) (run a bot with a hot key that can't withdraw funds), [Railway deploy](docs/railway.md). |
 | [`advanced/batch-7702`](advanced/batch-7702) | A **technique demo** (not a trading strategy): how to use EIP-7702 to batch multiple actions into a single transaction. |
 | [`tools/edge-analytics`](tools/edge-analytics) | An **analysis tool** (not a bot): measures whether a maker actually has an edge — captured spread vs adverse selection vs transactions-per-fill — from your own fills. Methodology in [docs/measuring-edge.md](docs/measuring-edge.md). |
 | [`examples/`](examples) | The real competition bots, sanitized to core code. Different architectures, languages, and tricks — read them to see how people actually did it. |
@@ -82,6 +83,15 @@ do without sending anything. Watch it, then set `DRY_RUN=false` in `.env` to go 
 npm run dev -w market-making      # or: grid · momentum · mean-reversion · twap · ensemble
 ```
 
+**Backtest first** (no private key required — historical candles + simulated fills):
+
+```bash
+npm run backtest -- review --symbol WETH:USDso --interval 5m --days 7
+npm run backtest -- run momentum --days 3 --quiet
+```
+
+See [docs/backtesting.md](docs/backtesting.md) for the full CLI, cost model, and how to add an adapter.
+
 **Python** (same strategies, on the Python core):
 
 ```bash
@@ -103,7 +113,7 @@ New to all this? Read [docs/getting-started.md](docs/getting-started.md) end to 
 
 Small read-only / cleanup utilities in [`scripts/`](scripts) (run with `npx tsx scripts/<name>.ts`):
 `doctor.ts` (setup + balance check), `operator-setup.ts` (one-time [session-key](docs/session-keys.md) setup), `inspect-and-clean.ts` (list & cancel any open orders),
-`one-ioc.ts` (place a single IOC order to test the full lifecycle).
+`one-ioc.ts` (place a single IOC order to test the full lifecycle), `backtest.ts` ([historical replay](docs/backtesting.md) — also `npm run backtest`).
 
 ## Networks
 

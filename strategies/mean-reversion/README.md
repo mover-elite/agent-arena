@@ -48,3 +48,13 @@ tell "waiting" apart from "stuck" (`STATUS_LOG_MS` to change, `0` to silence).
 - **Pays the spread twice** (taker in and out) — the reversion has to beat round-trip cost.
 - Requires a mean-reverting regime; it deliberately does nothing in a strong trend (where
   [momentum](../momentum) is the right tool instead).
+
+## Backtest
+
+Replay this strategy on historical candles (no private key required):
+
+```bash
+npm run backtest -- run mean-reversion --symbol WETH:USDso --interval 5m --days 7 --quiet
+```
+
+See [docs/backtesting.md](../../docs/backtesting.md) for flags, cost model, and limitations.

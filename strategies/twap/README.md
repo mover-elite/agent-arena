@@ -45,3 +45,13 @@ Set `TWAP_SIDE=sell` to distribute instead of accumulate. It exits when the sche
 - For exact fill accounting, read `OrderFilled` from chain — see
   [`../../docs/24-7-operations.md`](../../docs/24-7-operations.md). The progress log here is
   best-effort (intended slice size).
+
+## Backtest
+
+Replay this strategy on historical candles (no private key required):
+
+```bash
+npm run backtest -- run twap --symbol WETH:USDso --interval 5m --days 7 --quiet
+```
+
+See [docs/backtesting.md](../../docs/backtesting.md) for flags, cost model, and limitations.

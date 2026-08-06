@@ -72,3 +72,13 @@ python -m bot
 Everything DreamDEX-specific lives in [`@dreamdex-bot-kit/core`](../../packages/core): `Pool.place`
 quantizes to tick/lot and runs the safe placeOrder lifecycle; `DreamDexWs` handles the feed +
 reconnect. This strategy file is just the quoting logic.
+
+## Backtest
+
+Replay this strategy on historical candles (no private key required):
+
+```bash
+npm run backtest -- run market-making --symbol WETH:USDso --interval 5m --days 7 --quiet
+```
+
+See [docs/backtesting.md](../../docs/backtesting.md) for flags, cost model, and limitations.

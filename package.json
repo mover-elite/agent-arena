@@ -16,7 +16,13 @@
     "postinstall": "npm run build",
     "quickstart": "node scripts/quickstart.mjs",
     "railway:start": "node scripts/railway-start.mjs",
-    "build": "npm run build -w @dreamdex-bot-kit/core",
-    "typecheck": "npm run build && npm run typecheck --workspaces --if-present"
+    "backtest": "tsx scripts/backtest.ts",
+    "build": "npm run build -w @dreamdex-bot-kit/core && npm run build -w @dreamdex-bot-kit/backtest",
+    "typecheck": "npm run build && npm run typecheck --workspaces --if-present",
+    "test": "npm run test -w @dreamdex-bot-kit/backtest"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "vitest": "^2.1.6"
   }
 }

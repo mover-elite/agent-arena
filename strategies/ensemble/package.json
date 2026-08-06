@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "@dreamdex-bot-kit/core": "*",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "@dreamdex-bot-kit/backtest": "*"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

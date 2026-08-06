@@ -63,3 +63,13 @@ shows the current mid, the anchor, and both triggers, so you can tell "waiting" 
 - Uses on-chain reads for inventory/PnL bookkeeping; for a production grid, reconcile lots
   against real fills (`OrderFilled` on-chain) periodically — see
   [`../../docs/24-7-operations.md`](../../docs/24-7-operations.md).
+
+## Backtest
+
+Replay this strategy on historical candles (no private key required):
+
+```bash
+npm run backtest -- run grid --symbol WETH:USDso --interval 5m --days 7 --quiet
+```
+
+See [docs/backtesting.md](../../docs/backtesting.md) for flags, cost model, and limitations.
