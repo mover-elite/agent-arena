@@ -1,3 +1,11 @@
+/**
+ * @license
+ * Copyright DreamDEX S.A.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://github.com/somnia-chain/dreamdex-bot-kit/blob/main/LICENSE
+ */
+
 /** OHLCV candle from GET /v0/markets/{symbol}/candles */
 export interface Candle {
   timestamp: number;

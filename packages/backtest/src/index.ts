@@ -1,3 +1,11 @@
+/**
+ * @license
+ * Copyright DreamDEX S.A.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://github.com/somnia-chain/dreamdex-bot-kit/blob/main/LICENSE
+ */
+
 export type { Candle, CandleInterval } from "./candles/types.js";
 export { INTERVAL_MS, parseCandleNums } from "./candles/types.js";
 export { fetchCandles, fetchCandlesRange, fetchMarkets, fetchTickers } from "./candles/fetch.js";

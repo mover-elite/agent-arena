@@ -1,3 +1,11 @@
+/**
+ * @license
+ * Copyright DreamDEX S.A.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://github.com/somnia-chain/dreamdex-bot-kit/blob/main/LICENSE
+ */
+
 import type { PlaceOrderResult, TopOfBook } from "@dreamdex-bot-kit/core";
 
 /** Local stand-in for Pool — strategies only need these members (structural typing). */

@@ -1,3 +1,11 @@
+/**
+ * @license
+ * Copyright DreamDEX S.A.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://github.com/somnia-chain/dreamdex-bot-kit/blob/main/LICENSE
+ */
+
 import type { Candle } from "../candles/types.js";
 import { parseCandleNums } from "../candles/types.js";
 import { depthAheadAt } from "../book/hybrid.js";

@@ -1,3 +1,11 @@
+/**
+ * @license
+ * Copyright DreamDEX S.A.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://github.com/somnia-chain/dreamdex-bot-kit/blob/main/LICENSE
+ */
+
 import type { Candle } from "../candles/types.js";
 import type { SimFill } from "../sim/fill-engine.js";
 import type { BacktestRunResult, EquityPoint, ReviewBotsResult } from "../replay/runner.js";
