@@ -19,6 +19,7 @@ const ALLOWED = new Set([
   "momentum",
   "mean-reversion",
   "twap",
+  "ensemble",
 ]);
 
 function normalizePrivateKey(raw) {
