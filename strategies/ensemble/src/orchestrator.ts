@@ -61,39 +61,26 @@ export class Orchestrator {
   private timer?: ReturnType<typeof setInterval>;
   private running = false;
   private cycleBusy = false;
+  /** Optional quote balance reader (SimPool provides walletQuote). */
+  private quoteReader?: () => Promise<number>;
+  private logFn: (msg: string, extra?: unknown) => void = log;
 
   async start(): Promise<void> {
     this.ctx = createChainContext();
-    log(
+    this.logFn(
       `network=${this.ctx.net.name} wallet=${this.ctx.account.address} dryRun=${config.dryRun} ai=${config.features.ai}`,
     );
 
     this.pool = await Pool.load(this.ctx, config.symbol);
-    log(`market ${config.symbol} tick=${this.pool.tick} lot=${this.pool.lot} minQty=${this.pool.minQty}`);
+    this.logFn(`market ${config.symbol} tick=${this.pool.tick} lot=${this.pool.lot} minQty=${this.pool.minQty}`);
 
-    const [base, quote] = await Promise.all([this.pool.walletBase(), walletQuote(this.ctx, this.pool)]);
+    const [base, quote] = await Promise.all([this.pool.walletBase(), this.readQuote()]);
     const { mid } = await this.pool.topOfBook();
     const startingEquity = quote + base * (mid ?? 0);
     this.risk = createRiskState(startingEquity > 0 ? startingEquity : config.notionalUsdso * 10);
-    log(`starting equity ≈ ${this.risk.startingEquity.toFixed(4)} quote-units`);
+    this.logFn(`starting equity ≈ ${this.risk.startingEquity.toFixed(4)} quote-units`);
 
-    const sctx: StrategyContext = {
-      log,
-      pool: this.pool,
-      walletAddress: this.ctx.account.address,
-      dryRun: config.dryRun,
-      cfg: config,
-    };
-
-    if (config.features.momentum) this.strategies.push(new MomentumStrategy(sctx));
-    if (config.features.meanReversion) this.strategies.push(new MeanReversionStrategy(sctx));
-    if (config.features.grid) this.strategies.push(new GridStrategy(sctx));
-    if (this.strategies.length === 0) {
-      throw new Error("No strategies enabled — set FEATURES_MOMENTUM / MEAN_REVERSION / GRID");
-    }
-    log(`modules: ${this.strategies.map((s) => s.name).join(", ")}`);
-
-    for (const s of this.strategies) await s.start();
+    await this.initStrategies(this.ctx.account.address);
 
     this.ws = new DreamDexWs(this.ctx.net, (msg) => {
       void this.onWs(msg);
@@ -104,9 +91,65 @@ export class Orchestrator {
 
     this.running = true;
     this.timer = setInterval(() => {
-      void this.cycle().catch((e) => log("cycle error", (e as Error).message));
+      void this.cycle().catch((e) => this.logFn("cycle error", (e as Error).message));
     }, config.loopMs);
     await this.cycle();
+  }
+
+  /**
+   * Bar-replay entrypoint: attach a simulated pool, skip WS / setInterval.
+   * Caller drives one `cycle()` per candle.
+   */
+  async startBacktest(
+    pool: Pool,
+    opts: {
+      log?: (msg: string, extra?: unknown) => void;
+      walletAddress?: string;
+      quoteReader?: () => Promise<number>;
+    } = {},
+  ): Promise<void> {
+    if (opts.log) this.logFn = opts.log;
+    this.pool = pool;
+    this.quoteReader = opts.quoteReader;
+    const walletAddress = opts.walletAddress ?? "0x0000000000000000000000000000000000000001";
+
+    const [base, quote] = await Promise.all([this.pool.walletBase(), this.readQuote()]);
+    const { mid } = await this.pool.topOfBook();
+    const startingEquity = quote + base * (mid ?? 0);
+    this.risk = createRiskState(startingEquity > 0 ? startingEquity : config.notionalUsdso * 10);
+    this.logFn(
+      `backtest dryRun=${config.dryRun} ai=${config.features.ai} equity≈${this.risk.startingEquity.toFixed(4)}`,
+    );
+
+    await this.initStrategies(walletAddress);
+    this.running = true;
+  }
+
+  private async initStrategies(walletAddress: string): Promise<void> {
+    const sctx: StrategyContext = {
+      log: this.logFn,
+      pool: this.pool,
+      walletAddress,
+      dryRun: config.dryRun,
+      cfg: config,
+    };
+
+    this.strategies = [];
+    if (config.features.momentum) this.strategies.push(new MomentumStrategy(sctx));
+    if (config.features.meanReversion) this.strategies.push(new MeanReversionStrategy(sctx));
+    if (config.features.grid) this.strategies.push(new GridStrategy(sctx));
+    if (this.strategies.length === 0) {
+      throw new Error("No strategies enabled — set FEATURES_MOMENTUM / MEAN_REVERSION / GRID");
+    }
+    this.logFn(`modules: ${this.strategies.map((s) => s.name).join(", ")}`);
+    for (const s of this.strategies) await s.start();
+  }
+
+  private async readQuote(): Promise<number> {
+    if (this.quoteReader) return this.quoteReader();
+    const pool = this.pool as Pool & { walletQuote?: () => Promise<number> };
+    if (typeof pool.walletQuote === "function") return pool.walletQuote();
+    return walletQuote(this.ctx, this.pool);
   }
 
   async stop(): Promise<void> {
@@ -115,7 +158,7 @@ export class Orchestrator {
     this.ws?.close();
     for (const s of this.strategies) await s.stop();
     if (this.position) {
-      log("shutdown — flattening open position");
+      this.logFn("shutdown — flattening open position");
       await this.exitPosition("shutdown flatten");
     }
   }
@@ -126,7 +169,7 @@ export class Orchestrator {
       try {
         await s.onWsEvent(event);
       } catch (e) {
-        log(`${s.name} onWsEvent error`, (e as Error).message);
+        this.logFn(`${s.name} onWsEvent error`, (e as Error).message);
       }
     }
 
@@ -147,26 +190,26 @@ export class Orchestrator {
     if (this.mids.length > config.windowSize) this.mids.shift();
   }
 
-  private async cycle(): Promise<void> {
+  async cycle(): Promise<void> {
     if (!this.running || this.cycleBusy) return;
     this.cycleBusy = true;
     try {
       this.risk = checkCircuitBreaker(this.risk, config);
       if (this.risk.halted) {
-        log(`HALTED — ${this.risk.haltReason}`);
+        this.logFn(`HALTED — ${this.risk.haltReason}`);
         return;
       }
 
       const book = await this.pool.topOfBook();
       if (book.mid === undefined) {
-        log("empty book — skip cycle");
+        this.logFn("empty book — skip cycle");
         return;
       }
       this.pushMid(book.mid);
 
       const [baseInventory, quoteInventory] = await Promise.all([
         this.pool.walletBase(),
-        walletQuote(this.ctx, this.pool),
+        this.readQuote(),
       ]);
 
       // Manage open long: TP / SL before new entries.
@@ -194,11 +237,11 @@ export class Orchestrator {
 
       const signals: SignalResult[] = this.strategies.map((s) => s.analyze(snap));
       for (const sig of signals) {
-        log(`signal ${sig.strategy}=${sig.signal} conf=${sig.confidence.toFixed(2)} — ${sig.reason}`);
+        this.logFn(`signal ${sig.strategy}=${sig.signal} conf=${sig.confidence.toFixed(2)} — ${sig.reason}`);
       }
 
-      const decision = await getDecision(signals, snap, config, log);
-      log(
+      const decision = await getDecision(signals, snap, config, this.logFn);
+      this.logFn(
         `decision ${decision.action} via ${decision.strategy} (${decision.source}) conf=${decision.confidence.toFixed(2)} — ${decision.reasoning}`,
       );
       recordSnapshot(signals, decision);
@@ -209,7 +252,7 @@ export class Orchestrator {
           await this.exitPosition(`ensemble SELL (${decision.strategy})`);
           return;
         }
-        log(`holding long qty=${this.position.qty.toFixed(6)} entry=${this.position.entry.toFixed(6)}`);
+        this.logFn(`holding long qty=${this.position.qty.toFixed(6)} entry=${this.position.entry.toFixed(6)}`);
         return;
       }
 
@@ -221,7 +264,7 @@ export class Orchestrator {
         this.risk,
       );
       if (!validation.approved || !validation.adjusted) {
-        log(`risk rejected: ${validation.reason}`);
+        this.logFn(`risk rejected: ${validation.reason}`);
         return;
       }
       const trade = validation.adjusted;
@@ -258,11 +301,11 @@ export class Orchestrator {
     const qty = trade.amount;
 
     if (qty < this.pool.minQty) {
-      log(`qty ${qty.toFixed(6)} below minQty ${this.pool.minQty}`);
+      this.logFn(`qty ${qty.toFixed(6)} below minQty ${this.pool.minQty}`);
       return;
     }
 
-    log(
+    this.logFn(
       `${config.dryRun ? "[dry-run] would" : "placing"} ${trade.action} ${qty.toFixed(6)} @ ~${touch.toFixed(6)} (${trade.strategy})`,
     );
 
@@ -298,7 +341,7 @@ export class Orchestrator {
         qty,
         orderType: ORDER_TYPE.ImmediateOrCancel,
       });
-      log(`placed ${trade.action} tx=${res.txHash} orderId=${res.orderId}`);
+      this.logFn(`placed ${trade.action} tx=${res.txHash} orderId=${res.orderId}`);
       recordTrade({
         at: new Date().toISOString(),
         action: trade.action,
@@ -322,7 +365,7 @@ export class Orchestrator {
         };
       }
     } catch (err) {
-      log(`place ${trade.action} failed`, (err as Error).message);
+      this.logFn(`place ${trade.action} failed`, (err as Error).message);
     }
   }
 
@@ -334,13 +377,13 @@ export class Orchestrator {
     const { bestBid, mid } = await this.pool.topOfBook();
     const exitPx = bestBid ?? mid;
     if (exitPx === undefined) {
-      log(`cannot exit — empty book (${reason})`);
+      this.logFn(`cannot exit — empty book (${reason})`);
       this.position = pos; // restore so next cycle retries
       return;
     }
 
     const pnl = (exitPx - pos.entry) * pos.qty;
-    log(`EXIT ${pos.qty.toFixed(6)} @ ~${exitPx.toFixed(6)} pnl≈${pnl.toFixed(4)} — ${reason}`);
+    this.logFn(`EXIT ${pos.qty.toFixed(6)} @ ~${exitPx.toFixed(6)} pnl≈${pnl.toFixed(4)} — ${reason}`);
     this.risk = recordRealizedPnl(this.risk, pnl);
     recordOutcome(pos.strategy, pnl);
 
@@ -355,7 +398,7 @@ export class Orchestrator {
         orderType: ORDER_TYPE.ImmediateOrCancel,
       });
     } catch (err) {
-      log("exit failed", (err as Error).message);
+      this.logFn("exit failed", (err as Error).message);
     }
   }
 }

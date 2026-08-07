@@ -51,3 +51,13 @@ every 30s shows the warm-up count and current momentum vs the entry threshold, s
 - **Crossing buffer matters.** On a fast tape, `bestAsk + 1 tick` may not actually cross (the ask
   gets pulled). `MOM_CROSS_BPS` gives the IOC room to fill — see the crossing note in
   [`../../docs/gotchas.md`](../../docs/gotchas.md).
+
+## Backtest
+
+Replay this strategy on historical candles (no private key required):
+
+```bash
+npm run backtest -- run momentum --symbol WETH:USDso --interval 5m --days 7 --quiet
+```
+
+See [docs/backtesting.md](../../docs/backtesting.md) for flags, cost model, and limitations.

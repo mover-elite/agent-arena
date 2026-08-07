@@ -1,6 +1,7 @@
 node_modules/
 dist/
 *.tsbuildinfo
+.cache/
 
 # secrets & local state — never commit these
 .env

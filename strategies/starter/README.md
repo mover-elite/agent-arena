@@ -50,3 +50,13 @@ for you.
 > The harness requotes every tick (simple but gas-hungry); use `market-making`
 > for gas-efficient requoting. If a live order errors on size, raise
 > `STARTER_SIZE_USDSO` above the market's `minQty`.
+
+## Backtest
+
+Replay this strategy on historical candles (no private key required):
+
+```bash
+npm run backtest -- run starter --symbol WETH:USDso --interval 5m --days 7 --quiet
+```
+
+See [docs/backtesting.md](../../docs/backtesting.md) for flags, cost model, and limitations.

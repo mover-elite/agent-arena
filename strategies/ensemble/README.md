@@ -64,3 +64,13 @@ On timeout / parse / HTTP errors the bot **falls back to majority vote** (fail-o
 Trade attributions land under `strategies/ensemble/data/`.
 
 > Educational template, not financial advice — see [`../../DISCLAIMER.md`](../../DISCLAIMER.md).
+
+## Backtest
+
+Replay this strategy on historical candles (no private key required):
+
+```bash
+npm run backtest -- run ensemble --symbol WETH:USDso --interval 5m --days 7 --quiet
+```
+
+See [docs/backtesting.md](../../docs/backtesting.md) for flags, cost model, and limitations.
