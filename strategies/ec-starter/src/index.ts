@@ -65,7 +65,13 @@ const log = (s: string) => console.log(`${new Date().toISOString()} ${s}`);
 // address — v2 recycles one pool across successive markets).
 const seeded = new Set<string>();
 
+// Trade one underlying only, or leave it blank for whatever the venue runs.
+// ec-passive and ec-laddering-bot have always honoured this; these two did not,
+// so a config that said BTC quietly traded ETH as well.
+const UNDERLYING = (process.env.EC_UNDERLYING ?? "").toUpperCase();
+
 async function takeOne(ctx: EcContext, market: UnifiedMarket): Promise<void> {
+  if (UNDERLYING && !market.symbol.toUpperCase().includes(UNDERLYING)) return;
   // 1) Authoritative status. Resolve by marketId; act only on this snapshot.
   const onchain = await marketOnchain(ctx, market);
   if (!onchain) return;

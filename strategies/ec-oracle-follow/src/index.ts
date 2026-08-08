@@ -179,6 +179,11 @@ function marketInfo(
   };
 }
 
+// Trade one underlying only, or leave it blank for whatever the venue runs.
+// The other EC bots honour this; keeping it uniform so a config that says BTC
+// means BTC everywhere.
+const UNDERLYING = (process.env.EC_UNDERLYING ?? "").toUpperCase();
+
 async function takeOne(
   ctx: EcContext,
   spot: SpotReader,
@@ -186,6 +191,7 @@ async function takeOne(
   market: UnifiedMarket,
   cycle: Cycle,
 ): Promise<void> {
+  if (UNDERLYING && !market.symbol.toUpperCase().includes(UNDERLYING)) return;
   // 1) Authoritative status. The indexer lags; only this snapshot decides.
   const onchain = await marketOnchain(ctx, market);
   if (!onchain) return;

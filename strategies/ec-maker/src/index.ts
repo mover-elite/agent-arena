@@ -84,7 +84,13 @@ function fairYes(bids: [number, number][], asks: [number, number][]): number {
   return bid ?? ask ?? 0.5;
 }
 
+// Trade one underlying only, or leave it blank for whatever the venue runs.
+// ec-passive and ec-laddering-bot have always honoured this; these two did not,
+// so a config that said BTC quietly traded ETH as well.
+const UNDERLYING = (process.env.EC_UNDERLYING ?? "").toUpperCase();
+
 async function quoteOne(ctx: EcContext, market: UnifiedMarket): Promise<void> {
+  if (UNDERLYING && !market.symbol.toUpperCase().includes(UNDERLYING)) return;
   const onchain = await marketOnchain(ctx, market);
   if (!onchain) return;
   if (!isTradable(onchain)) {
