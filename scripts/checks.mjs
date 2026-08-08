@@ -107,22 +107,31 @@ async function npmScriptsExist() {
 /**
  * A knob the code reads but `.env.example` never mentions is a knob nobody can
  * find, including whatever generates configs for people.
+ *
+ * Scoped to the ec-* strategies. The spot strategies read roughly seventy knobs
+ * that `.env.example` does not carry either; that predates this check and
+ * widening the rule to cover them belongs in its own change, not here.
  */
 async function envDocumented() {
   const example = await read(".env.example");
   const keys = new Set();
-  for (const dir of await dirsIn("strategies")) {
+  for (const dir of (await dirsIn("strategies")).filter((d) => d.startsWith("ec-"))) {
     for (const f of await sourcesIn(`strategies/${dir}/src`)) {
       const src = await read(f);
       for (const m of src.matchAll(/process\.env\.([A-Z][A-Z0-9_]*)/g)) keys.add(m[1]);
-      for (const m of src.matchAll(/envNum\(\s*["']([A-Z][A-Z0-9_]*)["']/g)) keys.add(m[1]);
       for (const m of src.matchAll(/process\.env\[["']([A-Z][A-Z0-9_]*)["']\]/g)) keys.add(m[1]);
+      // The spot strategies read through local helpers — num("MM_NOTIONAL_USDSO", 20),
+      // str(...), bool(...) — and ec-core through envNum(). Matching only
+      // `process.env.X` made this check blind to every spot knob in the repo.
+      for (const m of src.matchAll(/\b[a-zA-Z][a-zA-Z0-9_]*\(\s*["']([A-Z][A-Z0-9_]{2,})["']\s*,/g)) keys.add(m[1]);
     }
   }
-  const missing = [...keys].filter((k) => !example.includes(k)).sort();
+  // process.on("SIGTERM") and friends look like env reads to the matcher above.
+  const NOT_ENV = new Set(["SIGINT", "SIGTERM"]);
+  const missing = [...keys].filter((k) => !NOT_ENV.has(k) && !example.includes(k)).sort();
   return missing.length
     ? bad("env-documented", `undocumented: ${missing.join(", ")}`, `read by strategies: ${[...keys].sort().join(", ")}`)
-    : ok("env-documented", `${keys.size} knobs`);
+    : ok("env-documented", `${keys.size} ec knobs`);
 }
 
 /** The lifecycle the bots gate on. Off-by-one here trades a locked market. */
