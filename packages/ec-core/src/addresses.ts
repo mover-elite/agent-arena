@@ -21,7 +21,7 @@
 // To refresh: read the addresses.json for the network in the somnia-markets repo
 // (or the table in its DEPLOYMENTS.md) and update the map below. Any single
 // address can also be overridden from .env without editing this file — see
-// `ADDRESS_OVERRIDES` in config.ts. `npm run doctor` verifies the module address
+// `ADDRESS_OVERRIDES` in config.ts. `npm run ec:doctor` verifies the module address
 // actually has code on-chain, so a stale entry fails loudly.
 
 export type Address = `0x${string}`;
