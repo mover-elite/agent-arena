@@ -88,8 +88,8 @@ async function readBalances(ctx: EcContext, onchain: MarketOnchain): Promise<Bal
   const addr = ctx.exchange.walletAddress;
   if (!addr) return { yes: 0, no: 0, net: 0 };
   const dp = onchain.decimals;
-  const yesRaw = await ctx.exchange.client.getOutcomeBalance(onchain.outcomeToken, addr, onchain.yesId);
-  const noRaw = await ctx.exchange.client.getOutcomeBalance(onchain.outcomeToken, addr, onchain.noId);
+  const yesRaw = await ctx.exchange.client.getOutcomeBalance({ outcomeToken: onchain.outcomeToken, account: addr, id: onchain.yesId });
+  const noRaw = await ctx.exchange.client.getOutcomeBalance({ outcomeToken: onchain.outcomeToken, account: addr, id: onchain.noId });
   const yes = toHuman(yesRaw, dp);
   const no = toHuman(noRaw, dp);
   return { yes, no, net: yes - no };
@@ -257,7 +257,7 @@ async function flatten(
     const excess = quantize(ctx, bal.yes - bal.no);
     if (excess > 0) {
       const raw = toRawUnits(excess, dp);
-      assertInventoryForSell("sell", await ctx.exchange.client.getOutcomeBalance(onchain.outcomeToken, addr, onchain.yesId), raw, "YES");
+      assertInventoryForSell("sell", await ctx.exchange.client.getOutcomeBalance({ outcomeToken: onchain.outcomeToken, account: addr, id: onchain.yesId }), raw, "YES");
       const book = await ctx.exchange.fetchOrderBook(yes, 3);
       const filled = await iocSell(ctx, market, onchain, "YES", excess, book);
       log(`flatten: IOC sold ${filled}/${excess} YES excess`);
@@ -266,7 +266,7 @@ async function flatten(
     const excess = quantize(ctx, bal.no - bal.yes);
     if (excess > 0) {
       const raw = toRawUnits(excess, dp);
-      assertInventoryForSell("sell", await ctx.exchange.client.getOutcomeBalance(onchain.outcomeToken, addr, onchain.noId), raw, "NO");
+      assertInventoryForSell("sell", await ctx.exchange.client.getOutcomeBalance({ outcomeToken: onchain.outcomeToken, account: addr, id: onchain.noId }), raw, "NO");
       const book = await ctx.exchange.fetchOrderBook(no, 3);
       const filled = await iocSell(ctx, market, onchain, "NO", excess, book);
       log(`flatten: IOC sold ${filled}/${excess} NO excess`);
@@ -325,11 +325,7 @@ async function cycleGrid(
 
     if (r.side === "sell") {
       const raw = toRawUnits(size, onchain.decimals);
-      const held = await ctx.exchange.client.getOutcomeBalance(
-        onchain.outcomeToken,
-        ctx.exchange.walletAddress!,
-        onchain.yesId,
-      );
+      const held = await ctx.exchange.client.getOutcomeBalance({ outcomeToken: onchain.outcomeToken, account: ctx.exchange.walletAddress!, id: onchain.yesId, });
       assertInventoryForSell("sell", held, raw, "YES");
     }
 

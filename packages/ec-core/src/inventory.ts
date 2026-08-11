@@ -42,7 +42,7 @@ export async function seedInventory(ctx: EcContext, market: UnifiedMarket, oncha
 
   // Outcome positions are ERC-6909 ids on the shared singleton — read YES by
   // (outcomeToken, yesId), not a per-market ERC-20 balanceOf.
-  const yesBal = await exchange.client.getOutcomeBalance(onchain.outcomeToken, addr, onchain.yesId);
+  const yesBal = await exchange.client.getOutcomeBalance({ outcomeToken: onchain.outcomeToken, account: addr, id: onchain.yesId });
   const target = toRawUnits(config.inventory, config.decimals);
   if (yesBal >= target) return;
 

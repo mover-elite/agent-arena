@@ -174,7 +174,7 @@ export async function sellableSize(
   const me = ctx.exchange.walletAddress;
   if (!me) return 0;
   const id = outcome === "YES" ? onchain.yesId : onchain.noId;
-  const held = await ctx.exchange.client.getOutcomeBalance(onchain.outcomeToken, me, id);
+  const held = await ctx.exchange.client.getOutcomeBalance({ outcomeToken: onchain.outcomeToken, account: me, id: id });
   const one = 10n ** BigInt(ctx.config.decimals);
   const heldHuman = Number(held) / Number(one);
   const capped = toSteps(Math.min(want, heldHuman), one, ctx.config.lot, "floor");
@@ -214,14 +214,14 @@ async function assertFunded(
   // invalid parameters", and the bot logs that once per market per cycle
   // forever. Measured: 24 identical lines before anyone thought to look at the
   // native balance.
-  const gas = await client.publicClient.getBalance({ address: me });
+  const gas = await client.getViemClient().getBalance({ address: me });
   if (gas === 0n) {
     throw new Error(`out of gas: ${me} holds 0 native token on ${ctx.config.network}. Fund it to trade.`);
   }
 
   if (side === "sell") {
     const id = outcome === "YES" ? onchain.yesId : onchain.noId;
-    const held = await client.getOutcomeBalance(onchain.outcomeToken, me, id);
+    const held = await client.getOutcomeBalance({ outcomeToken: onchain.outcomeToken, account: me, id: id });
     if (held < quantity) {
       throw new Error(
         `not enough ${outcome} to sell: hold ${held}, need ${quantity} (raw). ` +
@@ -234,7 +234,7 @@ async function assertFunded(
   const need = (priceOwn * quantity) / 10n ** BigInt(ctx.config.decimals);
   const [wallet, vault] = await Promise.all([
     client.getErc20Balance(onchain.collateral, me),
-    client.getVaultBalance(onchain.pool, me, onchain.collateral).catch(() => 0n),
+    client.getVaultBalance({ vault: onchain.pool, owner: me, token: onchain.collateral }).catch(() => 0n),
   ]);
   if (wallet + vault < need) {
     throw new Error(
@@ -296,8 +296,8 @@ export async function netPosition(ctx: EcContext, onchain: MarketOnchain): Promi
   if (!me) return 0;
   const one = Number(10n ** BigInt(ctx.config.decimals));
   const [yes, no] = await Promise.all([
-    ctx.exchange.client.getOutcomeBalance(onchain.outcomeToken, me, onchain.yesId),
-    ctx.exchange.client.getOutcomeBalance(onchain.outcomeToken, me, onchain.noId),
+    ctx.exchange.client.getOutcomeBalance({ outcomeToken: onchain.outcomeToken, account: me, id: onchain.yesId }),
+    ctx.exchange.client.getOutcomeBalance({ outcomeToken: onchain.outcomeToken, account: me, id: onchain.noId }),
   ]);
   return (Number(yes) - Number(no)) / one;
 }

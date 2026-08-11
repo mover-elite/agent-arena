@@ -58,7 +58,7 @@ export async function settlementFeeBps(
     // indexer unreachable — fall through to chain
   }
   const oc = onchain ?? (await ctx.exchange.client.getMarketOnchain(market.info.marketId as Hex));
-  const pc = ctx.exchange.client.publicClient;
+  const pc = ctx.exchange.client.getViemClient();
   const settlement = ctx.config.addresses.binarySettlement;
   if (oc.finalized && settlement) {
     // The settlement record froze the fee at finalize — the pool may already be

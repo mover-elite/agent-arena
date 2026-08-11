@@ -70,8 +70,8 @@ export async function claimSettled(ctx: EcContext, opts: ClaimOptions = {}): Pro
     const onchain = await ctx.exchange.client.getMarketOnchain(row.marketId).catch(() => null);
     if (!onchain || !(onchain.isResolved || onchain.isVoided)) continue;
     const held = {
-      yes: await ctx.exchange.client.getOutcomeBalance(onchain.outcomeToken, addr, onchain.yesId),
-      no: await ctx.exchange.client.getOutcomeBalance(onchain.outcomeToken, addr, onchain.noId),
+      yes: await ctx.exchange.client.getOutcomeBalance({ outcomeToken: onchain.outcomeToken, account: addr, id: onchain.yesId }),
+      no: await ctx.exchange.client.getOutcomeBalance({ outcomeToken: onchain.outcomeToken, account: addr, id: onchain.noId }),
     };
     if (claimableOutcomes(onchain, held).length === 0) continue;
     // settledMarkets returns rows, not unified markets; the redeem path only
@@ -103,8 +103,8 @@ export async function redeemHoldings(
 
   const held =
     known ?? {
-      yes: await ctx.exchange.client.getOutcomeBalance(onchain.outcomeToken, addr, onchain.yesId),
-      no: await ctx.exchange.client.getOutcomeBalance(onchain.outcomeToken, addr, onchain.noId),
+      yes: await ctx.exchange.client.getOutcomeBalance({ outcomeToken: onchain.outcomeToken, account: addr, id: onchain.yesId }),
+      no: await ctx.exchange.client.getOutcomeBalance({ outcomeToken: onchain.outcomeToken, account: addr, id: onchain.noId }),
     };
   const claims = claimableOutcomes(onchain, held);
   if (claims.length === 0) return false;
