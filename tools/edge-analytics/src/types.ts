@@ -95,3 +95,16 @@ export interface AnalyzeConfig {
 
 export const DEFAULT_HORIZONS_MS: Horizons = [1_000, 10_000, 60_000] as const;
 export const DEFAULT_MAX_MID_STALENESS_MS = 5_000;
+
+/**
+ * Summary of a yield-optimizer score log (`ts,scoreRate,scoreAccrued,...`).
+ * Accrued score is own-order relative (qty × W × seconds), not USDso payout.
+ */
+export interface YieldSummary {
+  samples: number;
+  finalScoreAccrued: number;
+  meanScoreRate: number;
+  finalGasTxs: number;
+  /** Optional estimated USDso when the log has a non-empty estYieldUsdso column. */
+  finalEstYieldUsdso: number | null;
+}

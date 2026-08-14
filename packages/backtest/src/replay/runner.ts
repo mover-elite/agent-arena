@@ -253,6 +253,9 @@ export async function backtest(opts: BacktestOptions): Promise<BacktestRunResult
     equityCurve,
     lastMid,
   });
+  if (bot.metricsExtras) {
+    Object.assign(metrics, bot.metricsExtras());
+  }
 
   for (const w of warnings) {
     if (!opts.quiet) console.warn(`[warn] ${w}`);

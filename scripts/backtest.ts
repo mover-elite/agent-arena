@@ -34,6 +34,8 @@ export const BOT_IDS = [
   "twap",
   "starter",
   "ensemble",
+  "treasury",
+  "yield-optimizer",
 ] as const;
 
 export type BotId = (typeof BOT_IDS)[number];
@@ -58,6 +60,10 @@ async function loadAdapter(id: BotId): Promise<AdapterModule> {
       return import("../strategies/starter/src/backtest.js") as Promise<AdapterModule>;
     case "ensemble":
       return import("../strategies/ensemble/src/backtest.js") as Promise<AdapterModule>;
+    case "treasury":
+      return import("../strategies/treasury/src/backtest.js") as Promise<AdapterModule>;
+    case "yield-optimizer":
+      return import("../strategies/yield-optimizer/src/backtest.js") as Promise<AdapterModule>;
   }
 }
 
@@ -276,7 +282,10 @@ async function main(): Promise<void> {
     const bots: ReviewBotSpec[] = [];
     for (const id of f.bots) {
       const mod = await loadAdapter(id);
-      bots.push({ label: id, createBot: mod.createBacktestBot(f.sets) });
+      bots.push({
+        label: id,
+        createBot: mod.createBacktestBot({ ...f.sets, interval: f.interval }),
+      });
     }
     const { results } = await reviewBots({ ...common, bots });
     console.log(formatReviewTable(results.map((r) => ({ botId: r.botId, metrics: r.metrics }))));
@@ -291,7 +300,7 @@ async function main(): Promise<void> {
   const result = await backtest({
     ...common,
     label: bot,
-    createBot: mod.createBacktestBot(f.sets),
+    createBot: mod.createBacktestBot({ ...f.sets, interval: f.interval }),
   });
   console.log(formatReviewTable([{ botId: result.botId, metrics: result.metrics }]));
   console.log(

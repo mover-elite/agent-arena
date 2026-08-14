@@ -9,11 +9,14 @@
 // CLI: turn a trade log into an edge report.
 //
 //   tsx src/index.ts --trades <csv> [--mid <csv> | --mid-from-trades <csv>]
-//                    [--horizons 1,10,60] [--json]
+//                    [--yield-log <csv>] [--horizons 1,10,60] [--json]
 //
 // Examples:
 //   # Full analysis from a bot's csv-logger output + a book-mid poll:
 //   tsx src/index.ts --trades data/trades.csv --mid data/mids.csv
+//
+//   # Yield-optimizer: include presence-score log
+//   tsx src/index.ts --trades data/yo-trades.csv --mid data/yo-mids.csv --yield-log data/yo-yield.csv
 //
 //   # No book log? Approximate the mid from a public trade tape (lower bound):
 //   tsx src/index.ts --trades data/trades.csv --mid-from-trades data/tape.csv
@@ -21,15 +24,16 @@
 //   # Zero-setup demo on the bundled sample:
 //   npm start
 
-import { loadTradeRows, loadMidCsv, loadTradesCsv } from "./csv.js";
+import { loadTradeRows, loadMidCsv, loadTradesCsv, loadYieldCsv } from "./csv.js";
 import { markoutFills, midSeriesFromTrades } from "./markout.js";
 import { buildReport, formatReport } from "./report.js";
-import type { MidTick } from "./types.js";
+import type { MidTick, YieldSummary } from "./types.js";
 
 interface Args {
   trades?: string;
   mid?: string;
   midFromTrades?: string;
+  yieldLog?: string;
   horizonsMs?: number[];
   json: boolean;
 }
@@ -43,6 +47,7 @@ function parseArgs(argv: string[]): Args {
       case "--trades": a.trades = v; i++; break;
       case "--mid": a.mid = v; i++; break;
       case "--mid-from-trades": a.midFromTrades = v; i++; break;
+      case "--yield-log": a.yieldLog = v; i++; break;
       case "--horizons":
         a.horizonsMs = (v ?? "").split(",").map((s) => Number(s) * 1000);
         i++;
@@ -86,8 +91,13 @@ function main(): void {
     return;
   }
 
+  let yieldSummary: YieldSummary | undefined;
+  if (args.yieldLog) {
+    yieldSummary = loadYieldCsv(args.yieldLog);
+  }
+
   const markouts = markoutFills(fills, mids, { horizonsMs: args.horizonsMs });
-  const report = buildReport(markouts, actions);
+  const report = buildReport(markouts, actions, yieldSummary);
 
   if (args.json) {
     console.log(JSON.stringify(report, null, 2));

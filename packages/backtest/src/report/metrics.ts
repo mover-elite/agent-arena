@@ -29,6 +29,11 @@ export interface BacktestMetrics {
   avgMarkoutBps: number | null;
   /** Number of maker fills included in avgMarkoutBps. */
   markoutSampleSize: number;
+  /**
+   * Own-order relative yield score (qty × W × seconds), when a strategy reports it.
+   * Not a predicted USDso payout — competing makers' share is unknown in candle replay.
+   */
+  estYieldScore?: number;
 }
 
 export function computeMetrics(input: {

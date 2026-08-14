@@ -99,16 +99,36 @@ one, the measurements above will simply confirm you don't have it:
 4. **Scale** — amortising per-tx gas across large notional.
 5. **Benign flow** — genuinely uninformed counterparties to trade against.
 
+## The sixth term on DreamDEX: presence yield
+
+DreamDEX's [Collateral Yield Algorithm](https://docs.dreamdex.io/trading/common/yield-algorithm)
+pays makers for **resting open interest**, weighted by Gaussian proximity to mid
+(\(W = e^{-(P-P_{\mathrm{mid}})^2/(2\sigma^2)}\), score \(= q \times W \times\) seconds).
+That is a sixth structural edge — but **yield-band compliance ≠ profitability**.
+
+Net score the kit cares about:
+
+> **realized presence yield + captured spread − adverse selection − inventory risk − gas**
+
+A maker can sit inside the high-\(W\) region 100% of the time and still lose to
+toxic flow. Use [`strategies/yield-optimizer`](../strategies/yield-optimizer) to
+snap quotes into the band and emit a yield CSV; pass `--yield-log` to
+[`tools/edge-analytics`](../tools/edge-analytics) so the verdict includes accrued
+score alongside mark-out. Accrued score is **relative** until a settlement
+payout ingest exists — do not treat it as USDso APR.
+
 ## Workflow
 
 1. Log trades with the kit's `csv-logger` (`post`/`cancel`/`fill` rows; the tool
    also counts `reduce` if you extend the logger's `action` union to emit it).
 2. Log mids: poll `SpotPool.getBookLevels` (or the WS book channel) and record
    `(bestBid+bestAsk)/2` with a timestamp, ideally every ≤2s.
-3. Run `tools/edge-analytics` over both.
-4. Read the verdict. Negative net at your horizon ⇒ stop and change the edge, not
+3. Optionally log yield scores (`YO_YIELD_CSV` from the yield-optimizer).
+4. Run `tools/edge-analytics` over trades + mids (`--yield-log` when available).
+5. Read the verdict. Negative net at your horizon ⇒ stop and change the edge, not
    the parameters. Positive net but high transactions-per-fill ⇒ fix the quote
-   loop (reduceOrder / batching) before scaling.
+   loop (reduceOrder / batching) before scaling. High yield score with negative
+   mark-out ⇒ you are farming presence at a loss.
 
 ## References
 
@@ -116,3 +136,4 @@ one, the measurements above will simply confirm you don't have it:
   Specialist Market with Heterogeneously Informed Traders.*
 - Avellaneda, M. & Stoikov, S. (2008), *High-frequency Trading in a Limit Order
   Book* — for the quoting side this measures.
+- DreamDEX, *Collateral Yield Algorithm* — presence-weighted maker rewards.

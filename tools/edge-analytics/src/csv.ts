@@ -18,7 +18,7 @@
 // pass `--mid-from-trades` and we approximate it from a trades CSV.
 
 import { readFileSync } from "node:fs";
-import type { ActionCounts, Fill, MidTick } from "./types.js";
+import type { ActionCounts, Fill, MidTick, YieldSummary } from "./types.js";
 
 /** Parse a unix timestamp that may be seconds, milliseconds, or ISO-8601. */
 export function parseTs(raw: string): number {
@@ -132,4 +132,39 @@ export function loadTradesCsv(path: string): Array<{ tsMs: number; price: number
     .map((r) => ({ tsMs: parseTs(r.ts ?? ""), price: Number(r.price) }))
     .filter((t) => Number.isFinite(t.tsMs) && Number.isFinite(t.price) && t.price > 0)
     .sort((a, b) => a.tsMs - b.tsMs);
+}
+
+/**
+ * Load a yield-optimizer score CSV
+ * (`ts,scoreRate,scoreAccrued,bidW,askW,estYieldUsdso,gasTxs`).
+ */
+export function loadYieldCsv(path: string): YieldSummary {
+  const rows = readRows(path);
+  if (rows.length === 0) {
+    return {
+      samples: 0,
+      finalScoreAccrued: 0,
+      meanScoreRate: 0,
+      finalGasTxs: 0,
+      finalEstYieldUsdso: null,
+    };
+  }
+  const rates: number[] = [];
+  for (const r of rows) {
+    const rate = Number(r.scoreRate);
+    if (Number.isFinite(rate)) rates.push(rate);
+  }
+  const last = rows[rows.length - 1]!;
+  const accrued = Number(last.scoreAccrued);
+  const gas = Number(last.gasTxs);
+  const est = last.estYieldUsdso === "" || last.estYieldUsdso === undefined
+    ? null
+    : Number(last.estYieldUsdso);
+  return {
+    samples: rows.length,
+    finalScoreAccrued: Number.isFinite(accrued) ? accrued : 0,
+    meanScoreRate: rates.length ? rates.reduce((a, b) => a + b, 0) / rates.length : 0,
+    finalGasTxs: Number.isFinite(gas) ? gas : 0,
+    finalEstYieldUsdso: est !== null && Number.isFinite(est) ? est : null,
+  };
 }

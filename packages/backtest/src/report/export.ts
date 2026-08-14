@@ -43,6 +43,7 @@ export function formatCsvReport(results: MetricsRow[]): string {
     "finalEquity",
     "avgMarkoutBps",
     "markoutSampleSize",
+    "estYieldScore",
   ].join(",");
   const lines = results.map((r) => {
     const m = r.metrics;
@@ -58,6 +59,7 @@ export function formatCsvReport(results: MetricsRow[]): string {
       m.finalEquity.toFixed(6),
       m.avgMarkoutBps == null ? "" : m.avgMarkoutBps.toFixed(4),
       m.markoutSampleSize ?? 0,
+      m.estYieldScore == null ? "" : m.estYieldScore.toFixed(6),
     ].join(",");
   });
   return [header, ...lines].join("\n") + "\n";

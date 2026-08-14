@@ -35,6 +35,8 @@ const STRATEGIES = {
   "mean-reversion": { symbolVar: "MR_SYMBOL", defaultSymbol: "WETH:USDso" },
   twap: { symbolVar: "TWAP_SYMBOL", defaultSymbol: "SOMI:USDso" },
   ensemble: { symbolVar: "SYMBOL", defaultSymbol: "WETH:USDso" },
+  treasury: { symbolVar: "SYMBOL", defaultSymbol: "SOMI:USDso" },
+  "yield-optimizer": { symbolVar: "YO_SYMBOL", defaultSymbol: "SOMI:USDso" },
 };
 
 function parseFlags(argv) {

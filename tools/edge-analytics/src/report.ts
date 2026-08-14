@@ -18,7 +18,7 @@
 // positive but transactions-per-fill is high, gas may still eat the edge; price
 // it in explicitly (see README, "Don't forget gas").
 
-import type { ActionCounts, Fill, Markout } from "./types.js";
+import type { ActionCounts, Markout, YieldSummary } from "./types.js";
 
 export interface HorizonStat {
   horizonMs: number;
@@ -40,6 +40,8 @@ export interface EdgeReport {
   horizons: HorizonStat[];
   transactionsPerFill: number | null;
   actionTotals: { post: number; cancel: number; reduce: number; fill: number };
+  /** Presence-yield score summary when `--yield-log` was supplied. */
+  yieldSummary?: YieldSummary;
   /** Human-readable go/no-go, keyed off the longest horizon's median net. */
   verdict: string;
 }
@@ -68,6 +70,7 @@ function paretoWorstDecile(moves: number[]): number {
 export function buildReport(
   markouts: Markout[],
   actions: ActionCounts[] = [],
+  yieldSummary?: YieldSummary,
 ): EdgeReport {
   const captured = markouts
     .map((m) => m.capturedBps)
@@ -108,7 +111,7 @@ export function buildReport(
   const transactionsPerFill = totals.fill > 0 ? txs / totals.fill : null;
 
   const last = horizons[horizons.length - 1];
-  const verdict = makeVerdict(median(captured), last, transactionsPerFill);
+  const verdict = makeVerdict(median(captured), last, transactionsPerFill, yieldSummary);
 
   return {
     fills: markouts.length,
@@ -118,6 +121,7 @@ export function buildReport(
     horizons,
     transactionsPerFill,
     actionTotals: totals,
+    yieldSummary,
     verdict,
   };
 }
@@ -126,6 +130,7 @@ function makeVerdict(
   medCaptured: number,
   last: HorizonStat | undefined,
   txPerFill: number | null,
+  yieldSummary?: YieldSummary,
 ): string {
   if (!last || Number.isNaN(last.medianNetBps)) {
     return "INSUFFICIENT DATA — no fills had mid-price coverage at the longest horizon.";
@@ -149,6 +154,14 @@ function makeVerdict(
     parts.push(
       `WARNING: ${txPerFill.toFixed(0)} transactions per fill — gas may eat the edge even if it's positive. ` +
         `Requote less (only on moves > spread) or use reduceOrder/EIP-7702 batching.`,
+    );
+  }
+  if (yieldSummary && yieldSummary.samples > 0) {
+    parts.push(
+      `Presence yield: accrued score ${yieldSummary.finalScoreAccrued.toFixed(2)} ` +
+        `(mean rate ${yieldSummary.meanScoreRate.toFixed(4)}, gasTxs ${yieldSummary.finalGasTxs}). ` +
+        `Score is relative — convert to USDso only after settlement ingest. ` +
+        `Net score ≈ trading edge + presence yield − gas; do not celebrate yield-band compliance alone.`,
     );
   }
   return parts.join(" ");
@@ -180,6 +193,17 @@ export function formatReport(r: EdgeReport, midProxyNote = false): string {
     );
   } else {
     L.push("transactions per fill: n/a (no post/cancel/fill actions in the log)");
+  }
+  if (r.yieldSummary && r.yieldSummary.samples > 0) {
+    const y = r.yieldSummary;
+    L.push("");
+    L.push(
+      `presence yield: accrued score ${y.finalScoreAccrued.toFixed(2)}  ` +
+        `mean rate ${y.meanScoreRate.toFixed(4)}  gasTxs ${y.finalGasTxs}` +
+        (y.finalEstYieldUsdso !== null
+          ? `  estYield $${y.finalEstYieldUsdso.toFixed(4)}`
+          : "  (no USDso conversion — score only)"),
+    );
   }
   L.push("");
   L.push(`VERDICT: ${r.verdict}`);

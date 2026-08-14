@@ -72,6 +72,9 @@ npm run analyze -- --trades data/trades.csv --mid-from-trades data/tape.csv
 
 # Custom horizons (seconds) and machine-readable output.
 npm run analyze -- --trades data/trades.csv --mid data/mids.csv --horizons 1,5,30 --json
+
+# Yield-optimizer: include presence-score log in the verdict
+npm run analyze -- --trades data/yo-trades.csv --mid data/yo-mids.csv --yield-log data/yo-yield.csv
 ```
 
 ### Inputs
@@ -81,6 +84,7 @@ npm run analyze -- --trades data/trades.csv --mid data/mids.csv --horizons 1,5,3
 | `--trades` | `ts,network,pool,side,action,orderId,price,qty,notional,txHash,note` | the kit `csv-logger` (`action` ∈ `post`/`cancel`/`reduce`/`fill`/…) |
 | `--mid` | `ts,mid` | poll `SpotPool.getBookLevels` or the WS book channel; log `(bestBid+bestAsk)/2` |
 | `--mid-from-trades` | `ts,price` | a trade tape (e.g. the public trades API) — used as a mid proxy |
+| `--yield-log` | `ts,scoreRate,scoreAccrued,bidW,askW,estYieldUsdso,gasTxs` | optional; from [`strategies/yield-optimizer`](../../strategies/yield-optimizer) `YO_YIELD_CSV` |
 
 `ts` accepts unix seconds, unix milliseconds, or ISO-8601. `side` accepts
 `bid`/`buy` (→ you bought) or `ask`/`sell` (→ you sold).
