@@ -20,6 +20,8 @@ const ALLOWED = new Set([
   "mean-reversion",
   "twap",
   "ensemble",
+  "treasury",
+  "yield-optimizer",
   "ec-starter",
   "ec-maker",
   "ec-passive",

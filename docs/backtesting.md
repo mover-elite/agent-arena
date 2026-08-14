@@ -31,7 +31,7 @@ npm run backtest -- review [options]
 npm run backtest -- run <bot> [options]
 ```
 
-**Bots:** `momentum`, `mean-reversion`, `grid`, `market-making`, `twap`, `starter`, `ensemble`
+**Bots:** `momentum`, `mean-reversion`, `grid`, `market-making`, `twap`, `starter`, `ensemble`, `treasury`, `yield-optimizer`
 
 | Flag | Default | Meaning |
 | --- | --- | --- |

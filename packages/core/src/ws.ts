@@ -30,12 +30,19 @@ export class DreamDexWs {
   private heartbeat: ReturnType<typeof setInterval> | null = null;
   private reconnectDelay = 1_000;
   private closed = false;
+  /** Wall-clock ms of the last non-pong message (0 until first message). */
+  private _lastMessageAt = 0;
 
   constructor(
     private readonly net: NetworkConfig,
     private readonly onMessage: (msg: WsMessage) => void,
     private readonly onReconnect?: () => void,
   ) {}
+
+  /** Epoch ms of the last application message. 0 if none yet. Used by kill switches. */
+  get lastMessageAt(): number {
+    return this._lastMessageAt;
+  }
 
   connect(): void {
     this.closed = false;
@@ -57,6 +64,7 @@ export class DreamDexWs {
         return;
       }
       if (msg.operation === "pong") return;
+      this._lastMessageAt = Date.now();
       this.onMessage(msg);
     });
 

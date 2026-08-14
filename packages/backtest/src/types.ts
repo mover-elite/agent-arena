@@ -14,6 +14,8 @@ export interface BotHandle {
   onBar(): Promise<void>;
   finish?(): Promise<void>;
   warmupBars?: number;
+  /** Optional extras merged into BacktestMetrics after the run (e.g. estYieldScore). */
+  metricsExtras?: () => Partial<{ estYieldScore: number }>;
 }
 
 /** Factory that wires a strategy to a SimPool for one backtest run. */
