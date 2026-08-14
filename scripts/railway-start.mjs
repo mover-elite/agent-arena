@@ -20,6 +20,12 @@ const ALLOWED = new Set([
   "mean-reversion",
   "twap",
   "ensemble",
+  "ec-starter",
+  "ec-maker",
+  "ec-passive",
+  "ec-laddering-bot",
+  "ec-oracle-follow",
+  "ec-settlement",
 ]);
 
 function normalizePrivateKey(raw) {

@@ -73,3 +73,9 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck
+
+      # Rules typecheck cannot see: a strategy missing from the Railway
+      # allow-list, a knob absent from .env.example, an address that drifted
+      # from the published table. No network, about a second.
+      - name: Consistency checks
+        run: npm run check
