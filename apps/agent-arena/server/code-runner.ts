@@ -62,11 +62,15 @@ export async function runStrategyCode(
   const timeoutMs = opts?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   let worker: Worker | undefined;
   try {
-    // A real on-disk path for the Worker loader (not a tsconfig-mapped specifier);
-    // tsx intercepts the worker's module loading, so a `.ts` entry is fine.
+    // The worker entry is a `.ts` file, so the worker thread needs tsx's ESM
+    // loader. `process.execArgv` carries it only when the process was started as
+    // `node --import tsx …` (e.g. `tsx watch` locally); when started as the bare
+    // `tsx` bin (the Docker CMD), it's empty and the worker fails with
+    // "Unknown file extension .ts". So force the loader in unless it's already there.
+    const hasTsxLoader = process.execArgv.some((a) => a.includes("tsx"));
     worker = new Worker(new URL("./code-runner.worker.ts", import.meta.url), {
       workerData: { code, params: structuredClone(params), markets },
-      execArgv: process.execArgv,
+      execArgv: hasTsxLoader ? process.execArgv : [...process.execArgv, "--import", "tsx/esm"],
     });
   } catch (e) {
     return { ok: false, kind: "worker", message: (e as Error).message };
