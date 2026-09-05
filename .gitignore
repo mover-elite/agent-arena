@@ -29,3 +29,13 @@ venv/
 # python build artifacts
 *.egg-info/
 .pytest_cache/
+
+# agent-arena VPS deploy — holds PRIVATE_KEY
+apps/agent-arena/deploy.env
+
+# personal deployment config — not part of the public submission
+apps/agent-arena/scripts/deploy-vps.sh
+apps/agent-arena/fly.toml
+apps/agent-arena/docker-compose.yml
+apps/agent-arena/deploy.env.example
+apps/agent-arena/Dockerfile

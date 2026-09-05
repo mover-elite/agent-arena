@@ -7,7 +7,8 @@
   "workspaces": [
     "packages/*",
     "strategies/*",
-    "advanced/*"
+    "advanced/*",
+    "apps/*"
   ],
   "engines": {
     "node": ">=20"

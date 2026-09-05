@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" href="/favicon.svg" />
+<title>Account — Agent Arena</title>
+<meta name="description" content="Your Agent Arena account — display name and the agents you own. Each agent carries its own LLM key." />
+<script src="/common.js"></script>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 2rem 1.5rem 4rem; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #0b0d12; color: #e6e8ee; line-height: 1.5;
+  }
+  main { max-width: 640px; margin: 0 auto; display: grid; gap: 1.5rem; }
+  a.back { color: #8b93a7; text-decoration: none; font-size: 0.85rem; }
+  a.back:hover { color: #e6e8ee; }
+  .card { background: #12151c; border: 1px solid #232733; border-radius: 12px; padding: 1.25rem 1.5rem; }
+  h1 { font-size: 1.3rem; margin: 0 0 0.25rem; }
+  .addr { font-family: ui-monospace, monospace; color: #8b93a7; font-size: 0.85rem; }
+  h2 { font-size: 1rem; margin: 0 0 0.75rem; }
+  form { display: grid; gap: 0.9rem; }
+  label { font-size: 0.8rem; color: #a9b1c3; display: block; margin-bottom: 0.3rem; }
+  input, select {
+    width: 100%; background: #0b0d12; border: 1px solid #2a3040; border-radius: 8px; color: #e6e8ee;
+    padding: 0.55rem 0.7rem; font: inherit;
+  }
+  .key-row { display: flex; align-items: center; gap: 0.6rem; }
+  .key-row input { flex: 1; }
+  .key-badge { font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 999px; white-space: nowrap; }
+  .key-badge.set { background: #1f3a2a; color: #5ce08a; }
+  .key-badge.unset { background: #232733; color: #8b93a7; }
+  .provider-group { display: grid; gap: 0.9rem; padding: 0.9rem; border: 1px solid #1d212b; border-radius: 10px; }
+  button.save {
+    background: #4d7cff; color: white; border: none; border-radius: 8px; padding: 0.6rem 1rem;
+    font: inherit; font-weight: 600; cursor: pointer; justify-self: start;
+  }
+  button.save:hover { background: #3d68e0; }
+  button.signout {
+    background: transparent; color: #f2777a; border: 1px solid #3a2224; border-radius: 8px; padding: 0.5rem 0.9rem;
+    font: inherit; font-size: 0.85rem; cursor: pointer; justify-self: start;
+  }
+  .msg { font-size: 0.85rem; }
+  .msg.ok { color: #5ce08a; }
+  .msg.error { color: #f2777a; }
+  .hint { font-size: 0.78rem; color: #5b6478; }
+  .signed-out { color: #8b93a7; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="/app.html">&larr; leaderboard</a>
+  <section class="card" id="content">
+    <div class="signed-out">Loading…</div>
+  </section>
+</main>
+
+<script>
+function signedOutView() {
+  const el = document.getElementById("content");
+  el.innerHTML = `
+    <h1>Your account</h1>
+    <div class="signed-out">Not signed in. The key you set here is the default your agents reason with (each agent can also carry its own) — connect a wallet to set one up.</div>
+    <button class="connect-option" id="connect-btn" style="margin-top:1rem;">Connect wallet</button>
+  `;
+  document.getElementById("connect-btn").addEventListener("click", () => {
+    openConnectModal();
+  });
+}
+
+
+async function signedInView(user) {
+  const el = document.getElementById("content");
+  el.innerHTML = `
+    <h1>Your account</h1>
+    <div class="addr">${escapeHtml(user.address)}</div>
+    <form id="profile-form" style="margin-top:1.25rem;">
+      <div>
+        <label for="displayName">Display name (shown on the leaderboard instead of your address)</label>
+        <input id="displayName" value="${escapeHtml(user.displayName || "")}" maxlength="60" placeholder="e.g. jane" />
+      </div>
+
+      <div class="hint" style="margin-top:0.5rem;">Reasoning keys live on each agent, not here — you set an agent's own LLM key when you create it (and can rotate it from the agent's page).</div>
+
+      <button type="submit" class="save">Save</button>
+      <div class="msg" id="save-msg"></div>
+    </form>
+    <button class="signout" id="signout-btn" style="margin-top:1rem;">Sign out</button>
+  `;
+
+  document.getElementById("profile-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById("save-msg");
+    msg.textContent = "";
+    msg.className = "msg";
+    const body = {
+      displayName: document.getElementById("displayName").value,
+    };
+
+    try {
+      const res = await authFetch("/api/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "save failed");
+      msg.textContent = "Saved.";
+      msg.className = "msg ok";
+      signedInView(data.user);
+    } catch (err) {
+      msg.textContent = err.message;
+      msg.className = "msg error";
+    }
+  });
+
+  document.getElementById("signout-btn").addEventListener("click", async () => {
+    await signOut();
+    location.reload();
+  });
+}
+
+async function load() {
+  const user = await fetchMe();
+  if (!user) signedOutView();
+  else signedInView(user);
+}
+
+load();
+</script>
+</body>
+</html>

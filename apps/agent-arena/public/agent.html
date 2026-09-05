@@ -1,0 +1,624 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" href="/favicon.svg" />
+<title>Agent — Agent Arena</title>
+<meta name="description" content="One agent's strategy prompt, live reasoning feed, and P&L on Agent Arena — an AI agent builder for DreamDEX Event Contracts." />
+<script src="/common.js"></script>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 2rem 1.5rem 4rem; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #0b0d12; color: #e6e8ee; line-height: 1.5;
+  }
+  main { max-width: 800px; margin: 0 auto; display: grid; gap: 1.5rem; }
+  main.two { max-width: 1200px; grid-template-columns: minmax(0, 1.55fr) minmax(330px, 1fr); align-items: start; gap: 1.4rem; }
+  main.two .nav-row { grid-column: 1 / -1; }
+  main.two .col-main, main.two .col-side { display: grid; gap: 1.4rem; align-content: start; }
+  .col-side .card { display: flex; flex-direction: column; overflow: hidden; }
+  .col-side #open-card { max-height: 42vh; }
+  .col-side .feed-card { max-height: 62vh; }
+  .col-side .scrollbox, .col-side #feed { flex: 1; min-height: 0; overflow-y: auto; margin: 0 -0.4rem; padding: 0 0.4rem; }
+  @media (max-width: 900px) {
+    main.two { grid-template-columns: 1fr; max-width: 800px; }
+    .col-side #open-card { max-height: 44vh; }
+    .col-side .feed-card { max-height: 66vh; }
+  }
+  a.back { color: #8b93a7; text-decoration: none; font-size: 0.85rem; }
+  a.back:hover { color: #e6e8ee; }
+  .card { background: #12151c; border: 1px solid #232733; border-radius: 12px; padding: 1.25rem 1.5rem; }
+  h1 { font-size: 1.4rem; margin: 0.4rem 0 0.5rem; }
+  .prompt { color: #c3c9d6; font-size: 0.92rem; white-space: pre-wrap; }
+  .row { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+  .stat { font-size: 0.8rem; color: #8b93a7; }
+  .stat b { display: block; font-size: 1.15rem; color: #e6e8ee; font-weight: 600; }
+  .pnl-pos b { color: #5ce08a; } .pnl-neg b { color: #f2777a; }
+  .badge { display: inline-block; padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
+  .badge.funded { background: #1f3a2a; color: #5ce08a; }
+  .badge.pending { background: #2a2417; color: #d9b45c; }
+  .share-row { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.75rem; }
+  .share-row img { width: 220px; border-radius: 8px; border: 1px solid #232733; display: block; }
+  .share-best { color: #5ce08a; font-size: 0.82rem; font-weight: 600; }
+  button.copy-link {
+    background: #1a1d26; color: #e6e8ee; border: 1px solid #2a3040; border-radius: 8px; padding: 0.4rem 0.8rem;
+    font: inherit; font-size: 0.8rem; cursor: pointer; align-self: flex-start;
+  }
+  button.copy-link:hover { border-color: #4d7cff; }
+  .feed-item { border-bottom: 1px solid #1d212b; padding: 0.85rem 0; }
+  .feed-item:last-child { border-bottom: none; }
+  .feed-head { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.82rem; color: #8b93a7; }
+  .feed-action { font-weight: 700; font-size: 0.78rem; padding: 0.05rem 0.5rem; border-radius: 5px; }
+  .feed-action.BUY_UP { background: #1f3a2a; color: #5ce08a; }
+  .feed-action.BUY_DOWN { background: #3a1f22; color: #f2777a; }
+  .feed-action.HOLD { background: #232733; color: #a9b1c3; }
+  .feed-action.SKIP_RISK_GATED { background: #2a2417; color: #d9b45c; }
+  .feed-receipt {
+    display: inline-block; margin-left: 0.5rem; font-size: 0.72rem; font-weight: 600;
+    padding: 0.05rem 0.5rem; border-radius: 5px; background: #16233a; color: #7ab0ff; cursor: help;
+  }
+  .feed-reasoning {
+    margin-top: 0.4rem; font-size: 0.95rem; color: #e6e8ee; cursor: pointer;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .feed-reasoning.open { -webkit-line-clamp: unset; max-height: 11em; overflow-y: auto; }
+  .feed-reasoning::after { content: " ▸ more"; color: #5b6478; font-size: 0.78rem; }
+  .feed-reasoning.open::after { content: ""; }
+  #feed { overflow-y: auto; }
+  .feed-card { min-height: 320px; }
+  a.mkt-link { color: #8b93a7; text-decoration: underline dotted; text-underline-offset: 2px; }
+  a.mkt-link:hover { color: #7ab0ff; }
+  .settle-tag { display: inline-block; font-size: 0.72rem; font-weight: 600; padding: 0.05rem 0.45rem; border-radius: 5px; }
+  .settle-tag.win { background: #1f3a2a; color: #5ce08a; }
+  .settle-tag.loss { background: #3a1f22; color: #f2777a; }
+  .settle-tag.open { background: #232733; color: #a9b1c3; }
+  .feed-meta { margin-top: 0.35rem; font-size: 0.78rem; color: #8b93a7; }
+  .empty { color: #8b93a7; font-size: 0.9rem; }
+  footer.config-footer {
+    max-width: 1200px; margin: 1.5rem auto 0; display: flex; flex-wrap: wrap; gap: 0.9rem;
+    font-size: 0.75rem; color: #5b6478; border-top: 1px solid #1d212b; padding-top: 1rem;
+  }
+  .nav-row { display: flex; justify-content: space-between; align-items: center; }
+  .owner-label { font-size: 0.8rem; color: #8b93a7; margin-top: 0.75rem; }
+  /* ---- performance card ---- */
+  .perf-h { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin: 0 0 0.6rem; }
+  .perf-h h2 { margin: 0; font-size: 1.05rem; }
+  .perf-h .sub { font-size: 0.78rem; color: #8b93a7; }
+  .kgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); gap: 0.5rem; margin: 0.4rem 0 1rem; }
+  .k { background: #12151c; border: 1px solid #1d212b; border-radius: 9px; padding: 0.55rem 0.65rem; }
+  .k b { display: block; font-size: 1.15rem; font-weight: 700; color: #e6e8ee; line-height: 1.15; }
+  .k span { font-size: 0.68rem; color: #8b93a7; text-transform: uppercase; letter-spacing: 0.04em; }
+  .k.pos b { color: #5ce08a; } .k.neg b { color: #f2777a; }
+  .pnlwrap { background: #0e1116; border: 1px solid #1d212b; border-radius: 10px; padding: 0.6rem 0.7rem 0.3rem; margin-bottom: 1rem; }
+  .pnlwrap .cap { font-size: 0.72rem; color: #8b93a7; margin-bottom: 0.15rem; }
+  .calib { display: grid; gap: 0.35rem; margin-top: 0.3rem; }
+  .calrow { display: grid; grid-template-columns: 64px 1fr 74px; gap: 0.5rem; align-items: center; font-size: 0.74rem; color: #a9b1c3; }
+  .caltrack { position: relative; height: 16px; background: #12151c; border: 1px solid #1d212b; border-radius: 4px; }
+  .caltrack i { position: absolute; top: 0; bottom: 0; left: 0; background: #2f6f4a; border-radius: 4px 0 0 4px; }
+  .calmark { position: absolute; top: -3px; bottom: -3px; width: 2px; background: #7ab0ff; }
+  .arow { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 0.5rem; font-size: 0.78rem; padding: 0.35rem 0; border-bottom: 1px solid #1d212b; }
+  .arow.h { color: #8b93a7; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  .mono { font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<main class="two">
+  <div class="nav-row">
+    <a class="back" href="/app.html">&larr; leaderboard</a>
+    <div id="nav-auth"></div>
+  </div>
+  <div class="col-main">
+    <section class="card" id="header-card">
+      <div class="empty">Loading…</div>
+    </section>
+    <section class="card" id="perf-card" style="display:none;"></section>
+    <section class="card" id="logic-card" style="display:none;"></section>
+  </div>
+  <div class="col-side">
+    <section class="card" id="open-card" style="display:none;"></section>
+    <section class="card feed-card">
+      <h2 style="margin-top:0;font-size:1.05rem;">Reasoning feed</h2>
+      <div id="feed"></div>
+    </section>
+  </div>
+</main>
+<footer class="config-footer" id="config-footer">loading engine config…</footer>
+
+<script>
+const id = new URLSearchParams(location.search).get("id");
+
+async function load() {
+  if (!id) {
+    document.getElementById("header-card").innerHTML = '<div class="empty">No agent id in URL.</div>';
+    return;
+  }
+  let payload;
+  try {
+    const res = await authFetch(`/api/agents/${id}`);
+    if (!res.ok) {
+      document.getElementById("header-card").innerHTML = '<div class="empty">Agent not found.</div>';
+      return;
+    }
+    payload = await res.json();
+  } catch {
+    document.getElementById("header-card").innerHTML = '<div class="empty">Can\'t reach the server — is the market loop running?</div>';
+    return;
+  }
+  const { agent, stats, feed, isOwner } = payload;
+  document.title = `${agent.name} — Agent Arena`;
+  const pnlClass = stats.pnlUsd > 0 ? "pnl-pos" : stats.pnlUsd < 0 ? "pnl-neg" : "";
+  const ownerText = agent.ownerDisplayName || agent.ownerAddress || null;
+
+  const keySrc = agent.llmKey?.source;
+  const keyProv = agent.llmKey?.provider || "?";
+  const keyLine =
+    keySrc === "agent"
+      ? `Reasons with <b>this agent's own ${escapeHtml(keyProv)} key</b> — isolated from every other agent.`
+      : keySrc === "platform"
+        ? `Reasons with the shared platform ${escapeHtml(keyProv)} key (seeded flagship).`
+        : `No reasoning key set — this agent can't trade until one is${isOwner ? " added below" : " added"}.`;
+
+  const paused = Boolean(agent.pausedAt);
+  const fundState = paused
+    ? `<span class="badge pending" title="Paused by its owner — no reasoning, no new trades. Open positions still settle.">paused</span>`
+    : agent.isFunded
+      ? `<span class="badge funded" title="Wallet funded — trading for real on testnet.">trading</span>`
+      : isOwner
+        ? `<span class="badge pending" title="This agent won't trade until you fund its wallet.">not funded</span> <button class="copy-link" id="fund-btn" style="padding:0.15rem 0.6rem;">Fund this agent</button><span id="fund-msg" style="margin-left:0.5rem;font-size:0.8rem;color:#d9b45c;"></span>`
+        : `<span class="badge pending" title="Waiting for the owner to fund this agent's wallet.">not funded</span>`;
+
+  const isCode = agent.strategyKind === "code";
+  const kindLine = isCode
+    ? `⚙ Coded — runs a sandboxed function every cycle, <b>0 LLM calls</b>.`
+    : `🧠 LLM — reasons every cycle, <b>using your API quota</b> (rate-limited, daily cap).`;
+  const kindSwitchLabel = isCode ? "Switch to LLM reasoning" : "Convert to coded (AI writes it once)";
+  const canSwitch = isCode || agent.hasOwnLlmKey;
+
+  const ownerControls = isOwner
+    ? `<div class="owner-label" style="margin-top:0.9rem;">${kindLine}</div>
+       <div class="owner-label" style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-top:0.5rem;">
+         <button class="copy-link" id="kind-btn" style="padding:0.2rem 0.7rem;" ${canSwitch ? "" : "disabled title=\"add an LLM key first\""}>${kindSwitchLabel}</button>
+         <button class="copy-link" id="pause-btn" style="padding:0.2rem 0.7rem;">${paused ? "▶ Resume" : "⏸ Pause"}</button>
+         <button class="copy-link" id="delete-btn" style="padding:0.2rem 0.7rem;border-color:#3a2224;color:#f2777a;">Delete agent</button>
+         <span id="mgmt-msg" style="font-size:0.8rem;color:#8b93a7;"></span>
+       </div>`
+    : `<div class="owner-label" style="margin-top:0.9rem;">${kindLine}</div>`;
+
+  document.getElementById("header-card").innerHTML = `
+    ${fundState}
+    <h1>${escapeHtml(agent.name)}</h1>
+    <div class="prompt">${escapeHtml(agent.strategyPrompt)}</div>
+    <div class="owner-label" title="This agent's own dedicated testnet wallet — no shared wallet, no other agent's orders can touch it.">wallet: ${escapeHtml(agent.walletAddress)}</div>
+    <div class="owner-label">${ownerText ? `Owned by ${escapeHtml(ownerText)}${isOwner ? " (you)" : ""}` : "Platform-owned"}</div>
+    <div class="owner-label">${keyLine}${isOwner ? ` <button class="copy-link" id="key-edit-btn" style="margin-left:0.5rem;padding:0.15rem 0.5rem;">${keySrc === "agent" ? "change key" : "set key"}</button>` : ""}</div>
+    <div id="key-edit" style="display:none;margin-top:0.5rem;"></div>
+    ${ownerControls}
+    ${agent.llmBudget ? `<div class="owner-label" title="Spend control: agents skip the LLM call unless a market moved ≥2pp (or 15min passed), never call more than once per interval, and stop at the daily cap.">LLM calls today: <b>${agent.llmBudget.callsToday}</b> / ${agent.llmBudget.maxPerDay} cap · ≥ ${Math.round(agent.llmBudget.minIntervalMs / 1000)}s between calls${agent.llmBudget.nextEligibleInMs > 1000 ? ` · next in ${Math.ceil(agent.llmBudget.nextEligibleInMs / 1000)}s` : ""}</div>` : ""}
+    <div class="row">
+      <div class="stat ${pnlClass}"><b>${stats.pnlUsd >= 0 ? "+" : ""}${stats.pnlUsd.toFixed(2)}</b>P&amp;L (USD)</div>
+      <div class="stat"><b>${stats.settledCount}</b>settled</div>
+      <div class="stat" title="Mean squared error of this agent's Up-probability calls vs. real outcomes — lower is better, 0.25 is a coin flip."><b>${stats.avgBrier !== null ? stats.avgBrier.toFixed(4) : "—"}</b>avg Brier</div>
+    </div>
+    <div class="share-row">
+      <img src="/api/agents/${agent.id}/card.svg" alt="share card" />
+      <div>
+        ${stats.isAtPersonalBest ? '<div class="share-best">🎉 New personal best — worth sharing</div>' : ""}
+        <button class="copy-link" id="copy-link-btn">Copy share link</button>
+      </div>
+    </div>
+  `;
+  document.getElementById("copy-link-btn").addEventListener("click", async (e) => {
+    await navigator.clipboard.writeText(location.origin + "/agent.html?id=" + id);
+    e.target.textContent = "Copied!";
+    setTimeout(() => (e.target.textContent = "Copy share link"), 1500);
+  });
+
+  const kindBtn = document.getElementById("kind-btn");
+  if (kindBtn && !kindBtn.disabled) kindBtn.onclick = async () => {
+    const to = isCode ? "llm" : "code";
+    if (to === "code" && !confirm("Ask this agent's LLM to write a decision function from its current strategy description? It becomes a coded agent (0 LLM calls per cycle after this).")) return;
+    const msg = document.getElementById("mgmt-msg");
+    kindBtn.disabled = true; msg.textContent = to === "code" ? "generating the decision code…" : "switching to LLM reasoning…";
+    try {
+      const r = await authFetch(`/api/agents/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ strategyKind: to }) });
+      const d = await r.json();
+      if (!r.ok) { msg.textContent = d.error || "failed"; kindBtn.disabled = false; return; }
+      load();
+    } catch { msg.textContent = "server unreachable"; kindBtn.disabled = false; }
+  };
+
+  const pauseBtn = document.getElementById("pause-btn");
+  if (pauseBtn) pauseBtn.onclick = async () => {
+    const msg = document.getElementById("mgmt-msg");
+    pauseBtn.disabled = true; msg.textContent = "…";
+    try {
+      const r = await authFetch(`/api/agents/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ paused: !paused }) });
+      if (!r.ok) { msg.textContent = (await r.json()).error || "failed"; pauseBtn.disabled = false; return; }
+      load();
+    } catch { msg.textContent = "server unreachable"; pauseBtn.disabled = false; }
+  };
+
+  const deleteBtn = document.getElementById("delete-btn");
+  if (deleteBtn) deleteBtn.onclick = async () => {
+    if (!confirm(`Delete "${agent.name}" permanently? Its history and open positions are dropped from the board (positions still settle on-chain). This can't be undone.`)) return;
+    const msg = document.getElementById("mgmt-msg");
+    deleteBtn.disabled = true; msg.textContent = "deleting…";
+    try {
+      const r = await authFetch(`/api/agents/${id}`, { method: "DELETE" });
+      if (!r.ok) { msg.textContent = (await r.json()).error || "failed"; deleteBtn.disabled = false; return; }
+      location.href = "/app.html";
+    } catch { msg.textContent = "server unreachable"; deleteBtn.disabled = false; }
+  };
+
+  const fundBtn = document.getElementById("fund-btn");
+  if (fundBtn) fundBtn.onclick = async () => {
+    const msg = document.getElementById("fund-msg");
+    fundBtn.disabled = true; msg.textContent = "funding — gas drip + faucet mint…";
+    try {
+      const r = await authFetch(`/api/agents/${id}/fund`, { method: "POST" });
+      const d = await r.json();
+      if (!r.ok) { msg.style.color = "#f2777a"; msg.textContent = d.error || "funding failed"; fundBtn.disabled = false; return; }
+      msg.style.color = "#5ce08a"; msg.textContent = "funded — it starts trading next cycle";
+      setTimeout(load, 1200);
+    } catch { msg.style.color = "#f2777a"; msg.textContent = "couldn't reach the server"; fundBtn.disabled = false; }
+  };
+
+  const keyEditBtn = document.getElementById("key-edit-btn");
+  if (keyEditBtn) {
+    const box = document.getElementById("key-edit");
+    keyEditBtn.addEventListener("click", () => {
+      box.style.display = box.style.display === "none" ? "grid" : "none";
+      if (!box.innerHTML)
+        box.innerHTML = `
+          <select id="ke-prov" style="padding:0.4rem;background:#0b0d12;border:1px solid #2a3040;border-radius:6px;color:#e6e8ee;">
+            <option value="anthropic">Anthropic (Claude)</option><option value="gemini">Gemini</option>
+          </select>
+          <input id="ke-val" type="password" placeholder="new API key for this agent" autocomplete="off"
+            style="padding:0.4rem;background:#0b0d12;border:1px solid #2a3040;border-radius:6px;color:#e6e8ee;" />
+          <div style="display:flex;gap:0.5rem;">
+            <button class="copy-link" id="ke-save">Set this agent's key</button>
+          </div>
+          <div id="ke-msg" style="font-size:0.8rem;color:#d9b45c;min-height:1em;"></div>`;
+      const msg = () => document.getElementById("ke-msg");
+      const send = async (payload) => {
+        const r = await authFetch(`/api/agents/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const d = await r.json();
+        if (!r.ok) { msg().textContent = d.error || "failed"; return; }
+        msg().textContent = "";
+        load();
+      };
+      box.querySelector("#ke-save").onclick = () => {
+        const v = box.querySelector("#ke-val").value.trim();
+        if (!v) return void (msg().textContent = "paste a key first");
+        send({ llmProvider: box.querySelector("#ke-prov").value, llmApiKey: v });
+      };
+    });
+  }
+
+  renderPerformance(feed);
+  renderOpenPositions(agent.id);
+  renderLogicCard(agent, isOwner);
+
+  const feedEl = document.getElementById("feed");
+  if (feed.length === 0) {
+    feedEl.innerHTML = agent.isFunded
+      ? '<div class="empty">No decisions logged yet — the market loop runs every few seconds to minutes.</div>'
+      : '<div class="empty">Wallet is still being provisioned (waiting on the treasury) — this agent starts reasoning once it\'s funded.</div>';
+    return;
+  }
+  // On-chain reasoning receipts, keyed to the decision they attest (matched on
+  // marketId + cycleId) — see reasoning-registry.ts / ReceiptRecord.
+  const receiptByDecision = new Map();
+  // Settlement result of the position a decision opened, matched on its cycleId.
+  const settleByDecision = new Map();
+  for (const r of feed) {
+    if (r.type === "receipt") receiptByDecision.set(r.marketId + "|" + r.decisionCycleId, r);
+    if (r.type === "settlement") for (const cid of (r.referencedDecisionCycleIds || [])) settleByDecision.set(r.marketId + "|" + cid, r);
+  }
+
+  feedEl.innerHTML = feed.map((r) => {
+    if (r.type !== "decision") return "";
+    const edge = r.edge !== null ? (r.edge >= 0 ? "+" : "") + (r.edge * 100).toFixed(1) + "pp" : "—";
+    const receipt = receiptByDecision.get(r.marketId + "|" + r.cycleId);
+    const settle = settleByDecision.get(r.marketId + "|" + r.cycleId);
+    const settleLine = settle
+      ? `<div class="feed-meta"><span class="settle-tag ${settle.realizedPnlUsd >= 0 ? "win" : "loss"}">settled · ${escapeHtml(settle.outcome)} ${settle.realizedPnlUsd >= 0 ? "won" : "lost"} · ${settle.realizedPnlUsd >= 0 ? "+$" : "-$"}${Math.abs(settle.realizedPnlUsd).toFixed(2)}</span>${settle.llmBrierComponent != null ? ` · Brier ${settle.llmBrierComponent.toFixed(3)}` : ""}</div>`
+      : (r.action === "BUY_UP" || r.action === "BUY_DOWN")
+      ? `<div class="feed-meta"><span class="settle-tag open">position open — held to expiry</span></div>`
+      : "";
+    const receiptBadge = receipt
+      ? `<span class="feed-receipt" title="Reasoning hash ${escapeHtml(receipt.decisionHash)} committed on-chain in tx ${escapeHtml(receipt.txHash)} (registry ${escapeHtml(receipt.registryAddress)}), before this market could settle — the reasoning above can't have been edited after the fact.">⛓ verified on-chain</span>`
+      : "";
+    return `<div class="feed-item">
+      <div class="feed-head">
+        ${r.marketId ? `<a class="mkt-link" href="/app.html?market=${encodeURIComponent(r.marketId)}" title="open this market's chart with trades annotated">${escapeHtml(r.marketSymbol)}</a>` : `<span>${escapeHtml(r.marketSymbol)}</span>`}
+        <span>${new Date(r.ts).toLocaleTimeString()}</span>
+      </div>
+      <span class="feed-action ${r.action}">${r.action.replace("_", " ")}</span>${receiptBadge}
+      <div class="feed-reasoning" onclick="this.classList.toggle('open')" title="click to expand / collapse">${escapeHtml(r.reasoning)}</div>
+      <div class="feed-meta">
+        market ${r.marketImpliedUpProbability !== null ? r.marketImpliedUpProbability.toFixed(3) : "—"} ·
+        model ${r.llmFairUpProbability !== null ? r.llmFairUpProbability.toFixed(3) : "—"} ·
+        edge ${edge} ·
+        confidence ${r.confidence !== null ? r.confidence.toFixed(2) : "—"}
+        ${r.sizeShares ? ` · ${r.sizeShares} shares @ ${r.limitPrice.toFixed(3)}` : ""}
+        ${r.skipReason ? ` · ${r.skipReason.replace(/_/g, " ")}` : ""}
+      </div>
+      ${settleLine}
+    </div>`;
+  }).join("");
+}
+
+function areaSpark(vals, w, h) {
+  if (!vals || vals.length < 2) return "";
+  const min = Math.min(0, ...vals), max = Math.max(0, ...vals);
+  const rng = (max - min) || 1;
+  const X = (i) => (i / (vals.length - 1)) * w;
+  const Y = (v) => h - ((v - min) / rng) * h;
+  const zeroY = Y(0);
+  const line = vals.map((v, i) => (i ? "L" : "M") + X(i).toFixed(1) + "," + Y(v).toFixed(1)).join("");
+  const last = vals[vals.length - 1];
+  const col = last >= 0 ? "#5ce08a" : "#f2777a";
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none">
+    <line x1="0" y1="${zeroY.toFixed(1)}" x2="${w}" y2="${zeroY.toFixed(1)}" stroke="#2a3040" stroke-dasharray="3 3"/>
+    <path d="${line}L${w},${zeroY.toFixed(1)}L0,${zeroY.toFixed(1)}Z" fill="${col}" fill-opacity="0.12"/>
+    <path d="${line}" fill="none" stroke="${col}" stroke-width="1.6"/>
+    <circle cx="${X(vals.length - 1).toFixed(1)}" cy="${Y(last).toFixed(1)}" r="2.6" fill="${col}"/>
+  </svg>`;
+}
+
+function renderPerformance(feed) {
+  const card = document.getElementById("perf-card");
+  const chrono = [...feed].sort((a, b) => a.ts.localeCompare(b.ts));
+  const decs = chrono.filter((r) => r.type === "decision");
+  const settles = chrono.filter((r) => r.type === "settlement");
+  if (!decs.length && !settles.length) { card.style.display = "none"; return; }
+
+  const decByKey = new Map();
+  for (const r of decs) decByKey.set(r.marketId + "|" + r.cycleId, r);
+  const settledKeys = new Set();
+  for (const s of settles) for (const c of (s.referencedDecisionCycleIds || [])) settledKeys.add(s.marketId + "|" + c);
+
+  let cum = 0; const curve = [];
+  let wins = 0, losses = 0, grossWin = 0, grossLoss = 0, best = null, worst = null;
+  const byAsset = {};
+  const bins = [0, 1, 2, 3, 4].map(() => ({ n: 0, psum: 0, up: 0 }));
+  for (const s of settles) {
+    cum += s.realizedPnlUsd; curve.push(cum);
+    if (s.realizedPnlUsd >= 0) { wins++; grossWin += s.realizedPnlUsd; } else { losses++; grossLoss += -s.realizedPnlUsd; }
+    if (best === null || s.realizedPnlUsd > best) best = s.realizedPnlUsd;
+    if (worst === null || s.realizedPnlUsd < worst) worst = s.realizedPnlUsd;
+    const d = decByKey.get(s.marketId + "|" + (s.referencedDecisionCycleIds || [])[0]);
+    const asset = (d?.marketSymbol || s.marketId).split("-")[0] || "?";
+    const a = byAsset[asset] || (byAsset[asset] = { n: 0, w: 0, pnl: 0 });
+    a.n++; if (s.realizedPnlUsd >= 0) a.w++; a.pnl += s.realizedPnlUsd;
+    const p = d ? d.llmFairUpProbability : null;
+    if (p != null) { const bi = Math.min(4, Math.max(0, Math.floor(p * 5))); bins[bi].n++; bins[bi].psum += p; if (s.outcome === "Up") bins[bi].up++; }
+  }
+  const settled = settles.length;
+  const winRate = settled ? wins / settled : 0;
+  const avgWin = wins ? grossWin / wins : 0;
+  const avgLoss = losses ? grossLoss / losses : 0;
+  const pf = grossLoss > 0 ? grossWin / grossLoss : (grossWin > 0 ? Infinity : 0);
+  const acted = decs.filter((r) => r.action === "BUY_UP" || r.action === "BUY_DOWN");
+  const openN = acted.filter((r) => !settledKeys.has(r.marketId + "|" + r.cycleId)).length;
+  const hasCalib = bins.some((b) => b.n > 0);
+
+  const money = (v) => (v >= 0 ? "+$" : "-$") + Math.abs(v).toFixed(2);
+  const kk = (label, val, cls) => `<div class="k ${cls || ""}"><b>${val}</b><span>${label}</span></div>`;
+
+  card.style.display = "block";
+  card.innerHTML = `
+    <div class="perf-h"><h2>Performance</h2><span class="sub">${settled} settled · ${openN} still open</span></div>
+    <div class="pnlwrap">
+      <div class="cap">Cumulative realized P&amp;L over ${settled} settled position${settled === 1 ? "" : "s"}</div>
+      ${curve.length > 1 ? areaSpark(curve, 640, 90) : '<div class="empty">Not enough settled trades to chart yet.</div>'}
+    </div>
+    <div class="kgrid">
+      ${kk("win rate", settled ? (winRate * 100).toFixed(0) + "%" : "—")}
+      ${kk("record", wins + "–" + losses)}
+      ${kk("avg win", "$" + avgWin.toFixed(2), "pos")}
+      ${kk("avg loss", "-$" + avgLoss.toFixed(2), "neg")}
+      ${kk("profit factor", settled ? (pf === Infinity ? "∞" : pf.toFixed(2)) : "—")}
+      ${kk("best trade", best == null ? "—" : money(best), "pos")}
+      ${kk("worst trade", worst == null ? "—" : money(worst), "neg")}
+      ${kk("acted / held", acted.length + " / " + (decs.length - acted.length))}
+    </div>
+    ${hasCalib ? `
+    <div class="perf-h" style="margin-bottom:0.3rem;"><h2 style="font-size:0.9rem;">Calibration</h2><span class="sub">bar = actual Up rate · | = avg predicted</span></div>
+    <div class="calib">${bins.map((b, i) => {
+      const lo = i * 20, hi = lo + 20;
+      const actual = b.n ? b.up / b.n : 0;
+      const pred = b.n ? b.psum / b.n : 0;
+      return `<div class="calrow"><span>${lo}–${hi}%</span>
+        <span class="caltrack"><i style="width:${(actual * 100).toFixed(0)}%"></i>${b.n ? `<span class="calmark" style="left:${(pred * 100).toFixed(0)}%"></span>` : ""}</span>
+        <span class="mono">${b.n ? (actual * 100).toFixed(0) + "% · n" + b.n : "—"}</span></div>`;
+    }).join("")}</div>` : ""}
+    ${Object.keys(byAsset).length ? `
+    <div class="perf-h" style="margin:1rem 0 0.2rem;"><h2 style="font-size:0.9rem;">By underlying</h2></div>
+    <div class="arow h"><span>asset</span><span>trades</span><span>win%</span><span>net P&amp;L</span></div>
+    ${Object.entries(byAsset).map(([a, v]) => `<div class="arow"><span>${escapeHtml(a)}</span><span class="mono">${v.n}</span><span class="mono">${(v.w / v.n * 100).toFixed(0)}%</span><span class="mono" style="color:${v.pnl >= 0 ? "#5ce08a" : "#f2777a"}">${money(v.pnl)}</span></div>`).join("")}` : ""}
+  `;
+}
+
+async function renderOpenPositions(agentId) {
+  const card = document.getElementById("open-card");
+  let po;
+  try { po = await (await fetch("/api/positions")).json(); } catch { return; }
+  const rows = ((po && po.positions) || []).filter((p) => p.agentId === agentId && p.status === "open");
+  if (!rows.length) { card.style.display = "none"; return; }
+  rows.sort((a, b) => (b.openedAt || "").localeCompare(a.openedAt || ""));
+  const atRisk = rows.reduce((s, p) => s + (p.costUsd || 0), 0);
+  const ago = (iso) => {
+    const s = Math.max(0, (Date.now() - Date.parse(iso)) / 1000);
+    return s < 60 ? Math.round(s) + "s" : s < 3600 ? Math.round(s / 60) + "m" : Math.round(s / 3600) + "h";
+  };
+  card.style.display = "block";
+  card.innerHTML = `
+    <div class="perf-h"><h2>Open positions</h2><span class="sub">${rows.length} held to expiry · $${atRisk.toFixed(2)} at risk</span></div>
+    <div class="arow h" style="grid-template-columns:1.6fr 0.8fr 1.1fr 0.7fr;"><span>market</span><span>side</span><span>size @ entry</span><span>cost</span></div>
+    <div class="scrollbox">
+    ${rows.map((p) => `<div class="arow" style="grid-template-columns:1.6fr 0.8fr 1.1fr 0.7fr;">
+      <span class="mono" style="color:#c3c9d6;">${escapeHtml((p.symbol || "").replace("/tUSDC", ""))}<br><span style="color:#5b6478;font-size:0.72rem;">${ago(p.openedAt)} ago</span></span>
+      <span style="color:${p.side === "Up" ? "#5ce08a" : "#f2777a"};font-weight:600;">${p.side === "Up" ? "▲ Up" : "▼ Down"}</span>
+      <span class="mono">${(p.sizeShares || 0).toFixed(1)} @ ${(p.entryPrice || 0).toFixed(3)}</span>
+      <span class="mono">$${(p.costUsd || 0).toFixed(2)}</span>
+    </div>`).join("")}
+    </div>`;
+}
+
+function renderLogicCard(agent, isOwner) {
+  const card = document.getElementById("logic-card");
+  if (agent.strategyKind !== "code") { card.style.display = "none"; return; }
+  card.style.display = "block";
+  const spec = agent.generatedSpec;
+  const params = agent.generatedParams || {};
+  // Regenerating calls the LLM — only offered when the agent carries its own key.
+  // Built-in-preset agents typically have none; that's fine, everything else works.
+  const canRegen = isOwner && agent.hasOwnLlmKey;
+
+  if (agent.isGenerating) {
+    card.innerHTML = `<h2 style="margin-top:0;font-size:1.05rem;">Decision logic</h2>
+      <div class="prompt">✍️ writing its decision logic from your description…</div>
+      <div class="feed-meta">${escapeHtml(agent.strategyPrompt || "")}</div>`;
+    return;
+  }
+  if (agent.codeError && !spec) {
+    card.innerHTML = `<h2 style="margin-top:0;font-size:1.05rem;">Decision logic</h2>
+      <div class="feed-reasoning" style="color:#f2777a;">Code generation failed: ${escapeHtml(agent.codeError)}</div>
+      <div class="feed-meta">from: ${escapeHtml(agent.strategyPrompt || "")}</div>
+      ${canRegen ? `<div style="margin-top:0.6rem;"><button class="copy-link" id="lc-regen-open">Regenerate from a new description</button></div><div id="lc-regen" style="display:none;margin-top:0.5rem;"></div>`
+        : isOwner ? `<div class="feed-meta" style="margin-top:0.6rem;">Add an LLM key on the account page to rewrite this strategy.</div>` : ""}`;
+    if (canRegen) wireRegen();
+    return;
+  }
+  if (!spec) { card.innerHTML = ""; card.style.display = "none"; return; }
+
+  const paramRows = (spec.paramSchema || []).map((f) => {
+    const v = f.key in params ? params[f.key] : f.default;
+    const input = f.type === "boolean"
+      ? `<input type="checkbox" data-key="${escapeHtml(f.key)}" ${v ? "checked" : ""} ${isOwner ? "" : "disabled"} />`
+      : `<input type="number" data-key="${escapeHtml(f.key)}" value="${v}" ${f.min != null ? `min="${f.min}"` : ""} ${f.max != null ? `max="${f.max}"` : ""} ${f.step != null ? `step="${f.step}"` : ""} ${isOwner ? "" : "disabled"}
+           style="width:120px;padding:0.3rem;background:#0b0d12;border:1px solid #2a3040;border-radius:6px;color:#e6e8ee;" />`;
+    return `<div style="display:flex;align-items:center;gap:0.6rem;padding:0.25rem 0;font-size:0.85rem;">
+      <span style="min-width:150px;color:#a9b1c3;">${escapeHtml(f.label || f.key)}</span>${input}
+      ${f.help ? `<span style="font-size:0.75rem;color:#8b93a7;">${escapeHtml(f.help)}</span>` : ""}
+    </div>`;
+  }).join("");
+
+  card.innerHTML = `
+    <h2 style="margin-top:0;font-size:1.05rem;">Decision logic ${agent.codeError ? `<span style="color:#f2777a;font-size:0.8rem;">· last run: ${escapeHtml(agent.codeError)}</span>` : ""}</h2>
+    <div class="feed-reasoning">${escapeHtml(spec.explanation || "")}</div>
+    <div class="feed-meta">${spec.provider === "preset"
+      ? "built-in strategy" + (spec.presetId ? " · " + escapeHtml(spec.presetId) : "")
+      : "generated by " + escapeHtml(spec.provider || "?") + (spec.model ? " · " + escapeHtml(spec.model) : "")
+    } · runs in a sandbox each cycle, 0 LLM calls</div>
+    ${paramRows ? `<div style="margin-top:0.7rem;"><b style="font-size:0.8rem;color:#a9b1c3;">Parameters</b>${paramRows}
+      ${isOwner ? `<button class="copy-link" id="lc-save" style="margin-top:0.4rem;">Save parameters</button> <span id="lc-msg" style="font-size:0.8rem;color:#d9b45c;"></span>` : ""}</div>` : ""}
+    ${agent.generatedCode ? `<details style="margin-top:0.7rem;"><summary style="cursor:pointer;font-size:0.82rem;color:#8b93a7;">Show generated code</summary>
+      <pre style="overflow:auto;background:#0b0d12;border:1px solid #232733;border-radius:8px;padding:0.7rem;font-size:0.78rem;line-height:1.45;margin-top:0.4rem;">${escapeHtml(agent.generatedCode)}</pre></details>` : ""}
+    ${isOwner ? `<div style="margin-top:0.7rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
+      <button class="copy-link" id="lc-dry">Dry-run now</button>
+      ${canRegen ? `<button class="copy-link" id="lc-regen-open">Regenerate from a new description</button>` : ""}
+    </div>
+    <div id="lc-dry-out" style="margin-top:0.5rem;"></div>
+    <div id="lc-regen" style="display:none;margin-top:0.5rem;"></div>` : ""}`;
+
+  if (!isOwner) return;
+
+  const saveBtn = document.getElementById("lc-save");
+  if (saveBtn) saveBtn.onclick = async () => {
+    const out = {};
+    card.querySelectorAll("[data-key]").forEach((el) => {
+      out[el.dataset.key] = el.type === "checkbox" ? el.checked : Number(el.value);
+    });
+    const m = document.getElementById("lc-msg");
+    m.textContent = "saving…";
+    const r = await authFetch(`/api/agents/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ params: out }) });
+    const d = await r.json();
+    m.textContent = r.ok ? "saved" : (d.error || "failed");
+    if (r.ok) setTimeout(load, 400);
+  };
+
+  const dryBtn = document.getElementById("lc-dry");
+  if (dryBtn) dryBtn.onclick = async () => {
+    const outEl = document.getElementById("lc-dry-out");
+    outEl.innerHTML = '<span style="font-size:0.8rem;color:#8b93a7;">running…</span>';
+    const r = await authFetch(`/api/agents/${id}/dry-run`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+    const d = await r.json();
+    if (d.error) { outEl.innerHTML = `<span style="font-size:0.82rem;color:#f2777a;">${escapeHtml(d.error)}</span>`; return; }
+    if (!d.results || d.results.length === 0) { outEl.innerHTML = `<span style="font-size:0.82rem;color:#8b93a7;">${escapeHtml(d.note || "no live markets right now")}</span>`; return; }
+    const why = (s) => ({
+      code_no_opinion: "strategy returned no opinion (signal below its entry threshold)",
+      below_min_edge: "edge below the engine's MIN_EDGE_THRESHOLD",
+      below_min_confidence: "confidence below MIN_CONFIDENCE_THRESHOLD",
+      no_market_price: "no book mid for this market",
+      cooldown: "still in the per-market trade cooldown",
+      daily_loss_cap: "daily loss cap hit",
+    }[s] || s);
+    outEl.innerHTML = `<div style="font-size:0.8rem;color:#8b93a7;">would decide (no trade placed):</div>` + d.results.map((x) =>
+      `<div style="font-size:0.82rem;padding:0.25rem 0;border-bottom:1px solid #1d212b;"><b>${escapeHtml(x.symbol)}</b> · <span class="feed-action ${x.action}" style="padding:0 .35rem;">${x.action.replace(/_/g," ")}</span>`
+      + `${x.edge != null ? ` · edge ${(x.edge*100).toFixed(1)}pp` : ""}${x.confidence != null ? ` · conf ${x.confidence.toFixed(2)}` : ""}`
+      + `${x.skipReason ? ` · <span style="color:#d9b45c;">${escapeHtml(why(x.skipReason))}</span>` : ""}`
+      + `${x.reasoning ? `<div style="color:#c3c9d6;">${escapeHtml(x.reasoning)}</div>` : ""}</div>`
+    ).join("");
+  };
+
+  wireRegen();
+}
+
+function wireRegen() {
+  const openBtn = document.getElementById("lc-regen-open");
+  const box = document.getElementById("lc-regen");
+  if (!openBtn || !box) return;
+  openBtn.onclick = () => {
+    box.style.display = box.style.display === "none" ? "block" : "none";
+    if (!box.innerHTML) box.innerHTML = `
+      <textarea id="lc-regen-txt" rows="3" maxlength="2000" placeholder="Describe the strategy again, changed how you like…"
+        style="width:100%;background:#0b0d12;border:1px solid #2a3040;border-radius:8px;color:#e6e8ee;padding:0.5rem;font:inherit;"></textarea>
+      <div style="margin-top:0.4rem;"><button class="copy-link" id="lc-regen-go">Regenerate</button> <span id="lc-regen-msg" style="font-size:0.8rem;color:#d9b45c;"></span></div>`;
+    const go = document.getElementById("lc-regen-go");
+    go.onclick = async () => {
+      const description = document.getElementById("lc-regen-txt").value.trim();
+      const m = document.getElementById("lc-regen-msg");
+      if (!description) return void (m.textContent = "describe the strategy first");
+      m.textContent = "writing new logic… (takes a few seconds)";
+      go.disabled = true;
+      const r = await authFetch(`/api/agents/${id}/regenerate`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ description }) });
+      const d = await r.json();
+      go.disabled = false;
+      if (!r.ok) { m.textContent = d.error || "failed"; return; }
+      m.textContent = "done";
+      load();
+    };
+  };
+}
+
+load();
+// Auto-refresh, but never yank the page out from under someone who's typing
+// (params form, regenerate description, key editor) or has just interacted.
+let lastInteract = 0;
+["input", "focusin", "pointerdown", "keydown"].forEach((ev) =>
+  document.addEventListener(ev, (e) => {
+    const t = e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || (t.isContentEditable))) lastInteract = Date.now();
+  }, true),
+);
+function isEditing() {
+  const a = document.activeElement;
+  if (a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA" || a.tagName === "SELECT")) return true;
+  return Date.now() - lastInteract < 15000; // 15s grace after the last field touch
+}
+setInterval(() => { if (!isEditing()) load(); }, 5000);
+renderAuthNav("nav-auth");
+renderConfigFooter("config-footer");
+setInterval(() => renderConfigFooter("config-footer"), 30000);
+</script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+{
+  "name": "agent-arena",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch server/index.ts",
+    "start": "tsx server/index.ts",
+    "evaluate": "tsx scripts/evaluate.ts",
+    "verify:live": "tsx scripts/verify-live.ts",
+    "test:code-runner": "tsx scripts/test-code-runner.ts",
+    "test:code-presets": "tsx scripts/test-code-presets.ts",
+    "test:strategy-gen": "tsx scripts/test-strategy-gen.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.0",
+    "@google/genai": "latest",
+    "@dreamdex-bot-kit/ec-core": "*",
+    "@somnia-chain/markets-sdk": "^0.25.0",
+    "better-sqlite3": "^11.5.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "solc": "^0.8.26",
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0"
+  }
+}

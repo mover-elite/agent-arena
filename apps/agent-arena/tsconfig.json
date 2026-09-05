@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "noEmit": true,
+    "declaration": false,
+    // code-runner.worker.ts uses explicit .ts import specifiers: a worker_threads
+    // entry loaded by URL doesn't get tsx's .js -> .ts remapping.
+    "allowImportingTsExtensions": true
+  },
+  "include": ["server/**/*.ts", "scripts/**/*.ts"]
+}
