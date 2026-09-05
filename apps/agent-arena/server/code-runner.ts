@@ -63,14 +63,14 @@ export async function runStrategyCode(
   let worker: Worker | undefined;
   try {
     // The worker entry is a `.ts` file, so the worker thread needs tsx's ESM
-    // loader. `process.execArgv` carries it only when the process was started as
-    // `node --import tsx …` (e.g. `tsx watch` locally); when started as the bare
-    // `tsx` bin (the Docker CMD), it's empty and the worker fails with
-    // "Unknown file extension .ts". So force the loader in unless it's already there.
-    const hasTsxLoader = process.execArgv.some((a) => a.includes("tsx"));
+    // loader registered explicitly. `process.execArgv` does NOT reliably carry
+    // it into a worker: when the app runs under the bare `tsx` bin (the Docker
+    // CMD), tsx's re-exec flags there don't propagate the ESM hooks, and the
+    // worker dies with "Unknown file extension .ts". `--import tsx/esm` is
+    // double-register-safe, so set it unconditionally.
     worker = new Worker(new URL("./code-runner.worker.ts", import.meta.url), {
       workerData: { code, params: structuredClone(params), markets },
-      execArgv: hasTsxLoader ? process.execArgv : [...process.execArgv, "--import", "tsx/esm"],
+      execArgv: ["--import", "tsx/esm"],
     });
   } catch (e) {
     return { ok: false, kind: "worker", message: (e as Error).message };
